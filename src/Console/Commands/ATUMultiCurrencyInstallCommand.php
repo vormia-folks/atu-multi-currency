@@ -108,7 +108,8 @@ class ATUMultiCurrencyInstallCommand extends Command
 
         $envBlock = "\n# ATU Multi-Currency Configuration\n"
             . "ATU_CURRENCY_API_KEY=\n"
-            . "ATU_CURRENCY_UPDATE_FREQUENCY=daily\n";
+            . "ATU_CURRENCY_UPDATE_FREQUENCY=daily\n"
+            . "ATU_CURRENCY_SETTINGS_SOURCE=database\n";
 
         // Update .env
         if (File::exists($envPath)) {

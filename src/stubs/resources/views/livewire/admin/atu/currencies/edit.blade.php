@@ -108,6 +108,22 @@ new class extends Component {
                     'updated_at' => now(),
                 ]);
 
+            // If this is the default currency, sync with a2_ec_settings
+            if ($this->currency->is_default) {
+                // Check if a2_ec_settings table exists and update it
+                if (DB::getSchemaBuilder()->hasTable('a2_ec_settings')) {
+                    $settings = DB::table('a2_ec_settings')->first();
+                    if ($settings) {
+                        // Update currency_code and currency_symbol in a2_ec_settings
+                        DB::table('a2_ec_settings')
+                            ->update([
+                                'currency_code' => strtoupper($this->code),
+                                'currency_symbol' => $this->symbol,
+                            ]);
+                    }
+                }
+            }
+
             // Refresh currency data
             $this->currency = DB::table('atu_multicurrency_currencies')->where('id', $this->currency_id)->first();
             $this->rate = $this->currency->rate;

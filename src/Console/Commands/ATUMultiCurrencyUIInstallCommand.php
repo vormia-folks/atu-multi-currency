@@ -373,6 +373,44 @@ class ATUMultiCurrencyUIInstallCommand extends Command
         $this->line('   4. Test your currency management routes');
         $this->newLine();
 
+        $this->warn('⚠️  Manual Setup Required (if automatic injection failed):');
+        $this->newLine();
+        
+        $this->comment('📝 To manually add routes:');
+        $this->line('   Open routes/web.php and add the following inside Route::middleware([\'auth\'])->group(function () { ... }):');
+        $this->newLine();
+        $this->line('   Route::group([\'prefix\' => \'admin/atu\'], function () {');
+        $this->line('       Volt::route(\'currencies\', \'admin.atu.currencies.index\')->name(\'admin.atu.currencies.index\');');
+        $this->line('       Volt::route(\'currencies/create\', \'admin.atu.currencies.create\')->name(\'admin.atu.currencies.create\');');
+        $this->line('       Volt::route(\'currencies/edit/{id}\', \'admin.atu.currencies.edit\')->name(\'admin.atu.currencies.edit\');');
+        $this->line('       Volt::route(\'currencies/settings\', \'admin.atu.currencies.settings\')->name(\'admin.atu.currencies.settings\');');
+        $this->line('       Volt::route(\'currencies/logs\', \'admin.atu.currencies.logs\')->name(\'admin.atu.currencies.logs\');');
+        $this->line('   });');
+        $this->newLine();
+        $this->line('   Reference file: vendor/vormiaphp/atu-multicurrency/src/stubs/reference/routes-to-add.php');
+        $this->newLine();
+
+        $this->comment('📝 To manually add sidebar menu:');
+        $this->line('   Open resources/views/components/layouts/app/sidebar.blade.php');
+        $this->line('   Add the following menu items after the Platform group closing tag (</flux:navlist.group>):');
+        $this->newLine();
+        $this->line('   <hr />');
+        $this->line('   <flux:navlist.item icon="currency-dollar" :href="route(\'admin.atu.currencies.index\')"');
+        $this->line('       :current="request()->routeIs(\'admin.atu.currencies.index\') || request()->routeIs(\'admin.atu.currencies.create\') || request()->routeIs(\'admin.atu.currencies.edit\')" wire:navigate>');
+        $this->line('       {{ __(\'Currencies\') }}');
+        $this->line('   </flux:navlist.item>');
+        $this->line('   <flux:navlist.item icon="document-text" :href="route(\'admin.atu.currencies.logs\')"');
+        $this->line('       :current="request()->routeIs(\'admin.atu.currencies.logs\')" wire:navigate>');
+        $this->line('       {{ __(\'Currency Logs\') }}');
+        $this->line('   </flux:navlist.item>');
+        $this->line('   <flux:navlist.item icon="cog-6-tooth" :href="route(\'admin.atu.currencies.settings\')"');
+        $this->line('       :current="request()->routeIs(\'admin.atu.currencies.settings\')" wire:navigate>');
+        $this->line('       {{ __(\'Currency Settings\') }}');
+        $this->line('   </flux:navlist.item>');
+        $this->newLine();
+        $this->line('   Reference file: vendor/vormiaphp/atu-multicurrency/src/stubs/reference/sidebar-menu-to-add.blade.php');
+        $this->newLine();
+
         $this->comment('📖 For help and available commands, run: php artisan atumulticurrency:help');
         $this->newLine();
 

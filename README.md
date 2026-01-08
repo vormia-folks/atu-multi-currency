@@ -179,10 +179,12 @@ The following environment variables are added to your `.env` file during install
 # ATU Multi-Currency Configuration
 ATU_CURRENCY_API_KEY=
 ATU_CURRENCY_UPDATE_FREQUENCY=daily
+ATU_CURRENCY_SETTINGS_SOURCE=database
 ```
 
 - `ATU_CURRENCY_API_KEY`: API key for automatic currency rate updates (optional)
 - `ATU_CURRENCY_UPDATE_FREQUENCY`: How often to update currency rates (daily, weekly, etc.)
+- `ATU_CURRENCY_SETTINGS_SOURCE`: Settings storage source - `database` (recommended) or `file` (config file). Set to `database` to enable database settings management.
 
 ## Database Tables
 
@@ -233,6 +235,17 @@ The package automatically seeds the base currency from A2Commerce settings durin
 
 If `a2_ec_settings` doesn't exist, it defaults to USD/$.
 
+### Default Currency Synchronization
+
+The package automatically synchronizes the default currency with the `a2_ec_settings` table:
+
+- When you update the default currency's code or symbol in the admin panel, it automatically updates `a2_ec_settings.currency_code` and `a2_ec_settings.currency_symbol`
+- The default currency code must always match `a2_ec_settings.currency_code`
+- The default currency rate is always locked at 1.0 and cannot be changed
+- Only one currency can be set as default at any time
+
+**Important:** The default currency cannot be deleted or deactivated. To change the default currency, you must first set another currency as default, then update the previous default currency.
+
 ### Adding Additional Currencies
 
 You can add additional currencies by inserting records into the `atu_multicurrency_currencies` table:
@@ -251,11 +264,77 @@ DB::table('atu_multicurrency_currencies')->insert([
 ]);
 ```
 
+## UI Installation
+
+After installing the base package, you can install the UI components:
+
+```sh
+php artisan atumulticurrency:ui-install
+```
+
+This will automatically:
+- Copy UI view files to `resources/views/livewire/admin/atu/`
+- Attempt to inject routes into `routes/web.php`
+- Attempt to inject sidebar menu items into `resources/views/components/layouts/app/sidebar.blade.php`
+- Clear application caches
+
+### Manual Route Setup
+
+If automatic route injection fails, manually add the following routes to `routes/web.php` inside the `Route::middleware(['auth'])->group(function () { ... })` block:
+
+```php
+use Livewire\Volt\Volt;
+
+Route::group(['prefix' => 'admin/atu'], function () {
+    // Currencies
+    Volt::route('currencies', 'admin.atu.currencies.index')->name('admin.atu.currencies.index');
+    Volt::route('currencies/create', 'admin.atu.currencies.create')->name('admin.atu.currencies.create');
+    Volt::route('currencies/edit/{id}', 'admin.atu.currencies.edit')->name('admin.atu.currencies.edit');
+    Volt::route('currencies/settings', 'admin.atu.currencies.settings')->name('admin.atu.currencies.settings');
+    Volt::route('currencies/logs', 'admin.atu.currencies.logs')->name('admin.atu.currencies.logs');
+});
+```
+
+**Note:** If you have configured your own starterkit, make sure to add `use Livewire\Volt\Volt;` at the top of your `routes/web.php` file.
+
+### Manual Sidebar Menu Setup
+
+If automatic sidebar menu injection fails, manually add the following menu items to `resources/views/components/layouts/app/sidebar.blade.php` after the Platform group closing tag (`</flux:navlist.group>`):
+
+```blade
+@if (auth()->user()?->isAdminOrSuperAdmin())
+    <hr />
+
+    {{-- Currencies Menu Item --}}
+    <flux:navlist.item icon="currency-dollar" :href="route('admin.atu.currencies.index')"
+        :current="request()->routeIs('admin.atu.currencies.index') || request()->routeIs('admin.atu.currencies.create') || request()->routeIs('admin.atu.currencies.edit')" wire:navigate>
+        {{ __('Currencies') }}
+    </flux:navlist.item>
+
+    {{-- Currency Logs Menu Item --}}
+    <flux:navlist.item icon="document-text" :href="route('admin.atu.currencies.logs')"
+        :current="request()->routeIs('admin.atu.currencies.logs')" wire:navigate>
+        {{ __('Currency Logs') }}
+    </flux:navlist.item>
+
+    {{-- Currency Settings Menu Item --}}
+    <flux:navlist.item icon="cog-6-tooth" :href="route('admin.atu.currencies.settings')"
+        :current="request()->routeIs('admin.atu.currencies.settings')" wire:navigate>
+        {{ __('Currency Settings') }}
+    </flux:navlist.item>
+@endif
+```
+
+**Reference Files:**
+- Routes: `vendor/vormiaphp/atu-multicurrency/src/stubs/reference/routes-to-add.php`
+- Sidebar Menu: `vendor/vormiaphp/atu-multicurrency/src/stubs/reference/sidebar-menu-to-add.blade.php`
+
 ## Documentation
 
 For detailed implementation guides and architecture documentation, see:
 
 - **Build Guide**: `docs/build-guide.md` - Authoritative implementation guide
+- **UI Build Guide**: `docs/build-ui-guide.md` - UI controls and admin settings guide
 - **A2Commerce Documentation**: See [A2Commerce GitHub repository](https://github.com/a2-atu/a2commerce) for installation and usage documentation
 
 ## Uninstallation
