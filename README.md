@@ -32,42 +32,25 @@ The package follows a core principle: **A2 Commerce owns truth** - all prices st
 
 - **vormiaphp/vormia**: Required for core functionality and database structure
   - Used for user management, taxonomies, and meta data handling
-  - Install with: `composer require vormiaphp/vormia`
+  - See [Vormia installation guide](https://github.com/vormiaphp/vormia) for installation instructions
 
 - **a2-atu/a2commerce**: Required for e-commerce functionality
   - Provides the base commerce system that this package extends
-  - Install with: `composer require a2-atu/a2commerce`
+  - See [A2Commerce installation guide](https://github.com/a2-atu/a2commerce) for installation instructions
 
 The package will automatically check for required dependencies during installation and provide helpful error messages if they're missing.
 
 ## Installation
 
-Before installing ATU Multi-Currency, ensure you have Laravel, Vormia, and A2Commerce installed.
+Before installing ATU Multi-Currency, ensure you have Laravel, Vormia, and A2Commerce installed. See the [A2Commerce installation guide](https://github.com/a2-atu/a2commerce) for detailed instructions on installing A2Commerce and its dependencies.
 
-### Step 1: Install Laravel
-
-Follow the [Laravel installation guide](https://laravel.com/docs/installation) to install Laravel.
-
-### Step 2: Install Vormia
-
-ATU Multi-Currency requires Vormia to be installed first. Follow the [Vormia installation guide](https://github.com/vormiaphp/vormia) to install Vormia.
-
-### Step 3: Install A2Commerce
-
-ATU Multi-Currency extends A2Commerce functionality. Install A2Commerce first:
-
-```sh
-composer require a2-atu/a2commerce
-php artisan a2commerce:install
-```
-
-### Step 4: Install ATU Multi-Currency
+### Step 1: Install ATU Multi-Currency
 
 ```sh
 composer require vormia-folks/atu-multi-currency
 ```
 
-### Step 5: Run ATU Multi-Currency Installation
+### Step 2: Run ATU Multi-Currency Installation
 
 ```sh
 php artisan atumulticurrency:install
@@ -98,7 +81,7 @@ php artisan atumulticurrency:install --no-overwrite
 php artisan atumulticurrency:install --skip-env
 ```
 
-### Step 6: Run Migrations and Seeders
+### Step 3: Run Migrations and Seeders
 
 The installation command will prompt you to run migrations and seeders. You can also run them manually:
 
@@ -273,7 +256,7 @@ DB::table('atu_multicurrency_currencies')->insert([
 For detailed implementation guides and architecture documentation, see:
 
 - **Build Guide**: `docs/build-guide.md` - Authoritative implementation guide
-- **A2Commerce Documentation**: See A2Commerce package documentation for base functionality
+- **A2Commerce Documentation**: See [A2Commerce GitHub repository](https://github.com/a2-atu/a2commerce) for installation and usage documentation
 
 ## Uninstallation
 
@@ -327,7 +310,7 @@ This package is open-sourced software licensed under the [MIT license](https://o
 
 For issues, questions, or contributions:
 - Check the documentation in `docs/build-guide.md`
-- Review A2Commerce documentation for base functionality
+- Review [A2Commerce documentation](https://github.com/a2-atu/a2commerce) for base functionality
 - Open an issue on the package repository
 
 ## Version
