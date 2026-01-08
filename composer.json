@@ -7,7 +7,7 @@
     "require": {
         "php": "^8.2",
         "laravel/framework": "^12.0",
-        "vormiaphp/vormia": "^4.2",
+        "vormiaphp/vormia": "^4.4",
         "a2-atu/a2commerce": "^0.1.6"
     },
     "suggest": {},
