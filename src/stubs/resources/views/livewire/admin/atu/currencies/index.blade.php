@@ -42,8 +42,7 @@ new class extends Component {
         // Apply search filter
         if (!empty($this->search)) {
             $query->where(function ($q) {
-                $q->where('code', 'like', '%' . $this->search . '%')
-                  ->orWhere('symbol', 'like', '%' . $this->search . '%');
+                $q->where('code', 'like', '%' . $this->search . '%')->orWhere('symbol', 'like', '%' . $this->search . '%');
             });
         }
 
@@ -57,7 +56,7 @@ new class extends Component {
     {
         try {
             $currency = DB::table('atu_multicurrency_currencies')->where('id', $currencyId)->first();
-            
+
             if (!$currency) {
                 $this->notifyError(__('Currency not found.'));
                 return;
@@ -83,7 +82,7 @@ new class extends Component {
     {
         try {
             $currency = DB::table('atu_multicurrency_currencies')->where('id', $currencyId)->first();
-            
+
             if (!$currency) {
                 $this->notifyError(__('Currency not found.'));
                 return;
@@ -113,13 +112,6 @@ new class extends Component {
 		</x-slot>
 		<x-slot name="button">
 			<div class="float-right flex gap-2">
-				<a href="{{ route('admin.atu.currencies.logs') }}"
-					class="bg-gray-500 dark:bg-gray-600 text-white hover:bg-gray-600 dark:hover:bg-gray-700 px-3 py-2 rounded-md text-sm font-bold">
-					<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4 inline-block">
-						<path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-					</svg>
-					View Logs
-				</a>
 				<a href="{{ route('admin.atu.currencies.create') }}"
 					class="bg-blue-500 dark:bg-blue-600 text-white hover:bg-blue-600 dark:hover:bg-blue-700 px-3 py-2 rounded-md text-sm font-bold">
 					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4 inline-block">
@@ -156,15 +148,21 @@ new class extends Component {
 			<table class="min-w-full divide-y divide-gray-300 dark:divide-gray-600">
 				<thead class="bg-gray-50 dark:bg-gray-700">
 					<tr>
-						<th scope="col" class="py-3.5 pr-3 pl-4 text-left text-sm font-semibold text-gray-900 dark:text-gray-100 sm:pl-3 w-12"></th>
-						<th scope="col" class="py-3.5 pr-3 pl-4 text-left text-sm font-semibold text-gray-900 dark:text-gray-100 sm:pl-3">#ID</th>
-						<th scope="col" class="py-3.5 pr-3 pl-4 text-left text-sm font-semibold text-gray-900 dark:text-gray-100 sm:pl-3">Code</th>
-						<th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-gray-100">Symbol</th>
+						<th scope="col"
+							class="py-3.5 pr-3 pl-4 text-left text-sm font-semibold text-gray-900 dark:text-gray-100 sm:pl-3 w-12"></th>
+						<th scope="col"
+							class="py-3.5 pr-3 pl-4 text-left text-sm font-semibold text-gray-900 dark:text-gray-100 sm:pl-3">#ID</th>
+						<th scope="col"
+							class="py-3.5 pr-3 pl-4 text-left text-sm font-semibold text-gray-900 dark:text-gray-100 sm:pl-3">Code</th>
+						<th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-gray-100">Symbol
+						</th>
 						<th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-gray-100">Rate</th>
 						<th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-gray-100">Type</th>
 						<th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-gray-100">Fee</th>
-						<th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-gray-100">Country</th>
-						<th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-gray-100">Status</th>
+						<th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-gray-100">Country
+						</th>
+						<th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900 dark:text-gray-100">Status
+						</th>
 						<th scope="col" class="relative py-3.5 pr-4 pl-3 sm:pr-3">
 							<span class="sr-only">Actions</span>
 						</th>
@@ -177,14 +175,12 @@ new class extends Component {
 								// Get country name if country_taxonomy_id exists
 								$_country_name = '-';
 								if ($row->country_taxonomy_id) {
-									$_country = \App\Models\Vrm\Taxonomy::find($row->country_taxonomy_id);
-									$_country_name = $_country ? $_country->name : '-';
+								    $_country = \App\Models\Vrm\Taxonomy::find($row->country_taxonomy_id);
+								    $_country_name = $_country ? $_country->name : '-';
 								}
 
 								// Get default currency code for rate display
-								$_default_currency = DB::table('atu_multicurrency_currencies')
-									->where('is_default', true)
-									->first();
+								$_default_currency = DB::table('atu_multicurrency_currencies')->where('is_default', true)->first();
 								$_default_code = $_default_currency ? $_default_currency->code : 'USD';
 
 								// Check if row is expanded
@@ -208,7 +204,8 @@ new class extends Component {
 										@endif
 									</button>
 								</td>
-								<td class="py-4 pr-3 pl-4 text-sm font-medium whitespace-nowrap text-gray-900 dark:text-gray-100 sm:pl-3">{{ $row->id }}</td>
+								<td class="py-4 pr-3 pl-4 text-sm font-medium whitespace-nowrap text-gray-900 dark:text-gray-100 sm:pl-3">
+									{{ $row->id }}</td>
 								<td class="py-4 pr-3 pl-4 text-sm font-medium whitespace-nowrap text-gray-900 dark:text-gray-100 sm:pl-3">
 									{{ $row->code }}
 									@if ($row->is_default)
@@ -259,11 +256,13 @@ new class extends Component {
 											Edit
 										</a>
 										@if (!$row->is_default)
-											<button wire:click="toggleActive({{ $row->id }})" wire:confirm="Are you sure you want to {{ $row->is_active ? 'deactivate' : 'activate' }} this currency?"
+											<button wire:click="toggleActive({{ $row->id }})"
+												wire:confirm="Are you sure you want to {{ $row->is_active ? 'deactivate' : 'activate' }} this currency?"
 												class="inline-flex items-center gap-x-1.5 rounded-md {{ $row->is_active ? 'bg-yellow-600 hover:bg-yellow-500' : 'bg-green-600 hover:bg-green-500' }} px-2.5 py-1 text-xs font-semibold text-white shadow-xs focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
 												{{ $row->is_active ? 'Deactivate' : 'Activate' }}
 											</button>
-											<button wire:click="delete({{ $row->id }})" wire:confirm="Are you sure you want to delete this currency? This action cannot be undone."
+											<button wire:click="delete({{ $row->id }})"
+												wire:confirm="Are you sure you want to delete this currency? This action cannot be undone."
 												class="inline-flex items-center gap-x-1.5 rounded-md bg-red-600 px-2.5 py-1 text-xs font-semibold text-white shadow-xs hover:bg-red-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
 												<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
 													stroke="currentColor" class="size-4">
