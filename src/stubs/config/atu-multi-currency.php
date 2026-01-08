@@ -57,4 +57,15 @@ return [
     |
     */
     'table_prefix' => 'atu_multicurrency_',
+
+    /*
+    |--------------------------------------------------------------------------
+    | Settings Source
+    |--------------------------------------------------------------------------
+    |
+    | Determines where settings are stored and retrieved from.
+    | Options: 'file' (config file) or 'database' (atu_multicurrency_settings table)
+    |
+    */
+    'settings_source' => env('ATU_CURRENCY_SETTINGS_SOURCE', 'file'),
 ];
