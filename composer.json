@@ -1,0 +1,40 @@
+{
+    "name": "vormia-folks/atu-multi-currency",
+    "description": "ATU Multi Currency - A package for Laravel that provides multi currency support for your e-commerce website.",
+    "keywords": ["laravel", "php", "a2commerce", "atu", "atu-multi-currency","vormia"],
+    "type": "library",
+    "license": "MIT",
+    "require": {
+        "php": "^8.2",
+        "laravel/framework": "^12.0",
+        "vormiaphp/vormia": "^4.2",
+        "a2-atu/a2commerce": "^0.1.6",
+    },
+    "suggest": {},
+    "require-dev": {
+        "phpunit/phpunit": "^11.2"
+    },
+    "autoload": {
+        "psr-4": {
+            "Vormia\\ATUMultiCurrency\\": "src/"
+        },
+        "exclude-from-classmap": [
+            "src/stubs/"
+        ]
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Vormia\\ATUMultiCurrency\\Tests\\": "tests/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Vormia\\ATUMultiCurrency\\ATUMultiCurrencyServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}
+
