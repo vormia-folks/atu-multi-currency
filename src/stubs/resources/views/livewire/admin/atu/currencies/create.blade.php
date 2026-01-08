@@ -5,6 +5,7 @@ use Livewire\Attributes\Validate;
 use Livewire\Attributes\Computed;
 use Illuminate\Support\Facades\DB;
 use App\Traits\Vrm\Livewire\WithNotifications;
+use Vormia\ATUMultiCurrency\Support\CurrencySyncService;
 
 new class extends Component {
     use WithNotifications;
@@ -70,18 +71,36 @@ new class extends Component {
                 return;
             }
 
+            $isDefault = false;
+            
+            // Check if this should be the default currency (only if no default exists)
+            $existingDefault = DB::table('atu_multicurrency_currencies')
+                ->where('is_default', true)
+                ->exists();
+            
+            if (!$existingDefault) {
+                $isDefault = true;
+                $this->rate = 1.0; // Default currency must have rate 1.0
+            }
+
             DB::table('atu_multicurrency_currencies')->insert([
                 'code' => strtoupper($this->code),
                 'symbol' => $this->symbol,
-                'rate' => $this->rate,
+                'rate' => $isDefault ? 1.0 : $this->rate,
                 'is_auto' => $this->is_auto,
                 'fee' => $this->fee,
                 'country_taxonomy_id' => $this->country_taxonomy_id,
-                'is_default' => false,
+                'is_default' => $isDefault,
                 'is_active' => true,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
+
+            // If this is the default currency, sync with A2Commerce
+            if ($isDefault) {
+                $syncService = app(CurrencySyncService::class);
+                $syncService->syncToA2Commerce();
+            }
 
             $this->notifySuccess(__('Currency created successfully!'));
         } catch (\Exception $e) {

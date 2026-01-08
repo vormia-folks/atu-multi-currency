@@ -10,6 +10,7 @@ class Installer
     private const ENV_KEYS = [
         'ATU_CURRENCY_API_KEY' => '',
         'ATU_CURRENCY_UPDATE_FREQUENCY' => 'daily',
+        'ATU_CURRENCY_SETTINGS_SOURCE' => 'database',
     ];
 
     private const ROUTE_MARK_START = '// >>> ATU Multi-Currency Routes START';
@@ -367,11 +368,19 @@ PHP;
                 continue;
             }
 
+            // Skip lines that are comments
+            $trimmedLine = trim($line);
+            if (str_starts_with($trimmedLine, '#')) {
+                $remaining[] = $line;
+                continue;
+            }
+
             // Check if this line contains an ATU env key
             if (str_contains($line, '=')) {
                 [$key] = explode('=', $line, 2);
                 $key = trim($key);
 
+                // Remove any leading/trailing whitespace and check against ENV_KEYS
                 if (array_key_exists($key, self::ENV_KEYS)) {
                     $removedKeys[] = $key;
                     continue; // Skip this line

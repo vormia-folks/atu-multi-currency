@@ -5,6 +5,7 @@ use Livewire\Attributes\Validate;
 use Livewire\Attributes\Computed;
 use Illuminate\Support\Facades\DB;
 use App\Traits\Vrm\Livewire\WithNotifications;
+use Vormia\ATUMultiCurrency\Support\CurrencySyncService;
 
 new class extends Component {
     use WithNotifications;
@@ -110,18 +111,8 @@ new class extends Component {
 
             // If this is the default currency, sync with a2_ec_settings
             if ($this->currency->is_default) {
-                // Check if a2_ec_settings table exists and update it
-                if (DB::getSchemaBuilder()->hasTable('a2_ec_settings')) {
-                    $settings = DB::table('a2_ec_settings')->first();
-                    if ($settings) {
-                        // Update currency_code and currency_symbol in a2_ec_settings
-                        DB::table('a2_ec_settings')
-                            ->update([
-                                'currency_code' => strtoupper($this->code),
-                                'currency_symbol' => $this->symbol,
-                            ]);
-                    }
-                }
+                $syncService = app(CurrencySyncService::class);
+                $syncService->syncToA2Commerce();
             }
 
             // Refresh currency data

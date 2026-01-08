@@ -6,6 +6,7 @@ use Livewire\Volt\Component;
 use Livewire\Attributes\Computed;
 use Illuminate\Support\Facades\DB;
 use App\Traits\Vrm\Livewire\WithNotifications;
+use Vormia\ATUMultiCurrency\Support\CurrencySyncService;
 
 new class extends Component {
     use WithPagination;
@@ -99,6 +100,57 @@ new class extends Component {
             $this->notifySuccess(__('Currency deleted successfully!'));
         } catch (\Exception $e) {
             $this->notifyError(__('Failed to delete currency: ' . $e->getMessage()));
+        }
+    }
+
+    public function setDefault($currencyId)
+    {
+        try {
+            $currency = DB::table('atu_multicurrency_currencies')->where('id', $currencyId)->first();
+
+            if (!$currency) {
+                $this->notifyError(__('Currency not found.'));
+                return;
+            }
+
+            // Prevent setting inactive currency as default
+            if (!$currency->is_active) {
+                $this->notifyError(__('Cannot set an inactive currency as default.'));
+                return;
+            }
+
+            // If already default, do nothing
+            if ($currency->is_default) {
+                $this->notifyInfo(__('This currency is already the default currency.'));
+                return;
+            }
+
+            DB::beginTransaction();
+
+            // Remove default flag from current default currency
+            DB::table('atu_multicurrency_currencies')
+                ->where('is_default', true)
+                ->update(['is_default' => false]);
+
+            // Set new default currency (rate must be 1.0)
+            DB::table('atu_multicurrency_currencies')
+                ->where('id', $currencyId)
+                ->update([
+                    'is_default' => true,
+                    'rate' => '1.00000000',
+                    'updated_at' => now(),
+                ]);
+
+            // Sync to A2Commerce
+            $syncService = app(CurrencySyncService::class);
+            $syncService->syncToA2Commerce();
+
+            DB::commit();
+
+            $this->notifySuccess(__('Default currency updated successfully!'));
+        } catch (\Exception $e) {
+            DB::rollBack();
+            $this->notifyError(__('Failed to set default currency: ' . $e->getMessage()));
         }
     }
 }; ?>
@@ -255,6 +307,18 @@ new class extends Component {
 											</svg>
 											Edit
 										</a>
+										@if (!$row->is_default && $row->is_active)
+											<button wire:click="setDefault({{ $row->id }})"
+												wire:confirm="Are you sure you want to set {{ $row->code }} as the default currency? The current default currency will be changed."
+												class="inline-flex items-center gap-x-1.5 rounded-md bg-blue-600 px-2.5 py-1 text-xs font-semibold text-white shadow-xs hover:bg-blue-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600">
+												<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5"
+													stroke="currentColor" class="size-4">
+													<path stroke-linecap="round" stroke-linejoin="round"
+														d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+												</svg>
+												Set Default
+											</button>
+										@endif
 										@if (!$row->is_default)
 											<button wire:click="toggleActive({{ $row->id }})"
 												wire:confirm="Are you sure you want to {{ $row->is_active ? 'deactivate' : 'activate' }} this currency?"

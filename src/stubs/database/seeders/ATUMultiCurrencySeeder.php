@@ -29,16 +29,21 @@ class ATUMultiCurrencySeeder extends Seeder
 
         try {
             if (DB::getSchemaBuilder()->hasTable('a2_ec_settings')) {
-                $settings = DB::table('a2_ec_settings')->first();
+                // Get currency_code and currency_symbol from key-value settings table
+                $a2CurrencyCode = DB::table('a2_ec_settings')
+                    ->where('key', 'currency_code')
+                    ->value('value');
+                
+                $a2CurrencySymbol = DB::table('a2_ec_settings')
+                    ->where('key', 'currency_symbol')
+                    ->value('value');
 
-                if ($settings) {
-                    // Try to get currency_code and currency_symbol from settings
-                    $currencyCode = $settings->currency_code ?? $currencyCode;
-                    $currencySymbol = $settings->currency_symbol ?? $currencySymbol;
-
+                if ($a2CurrencyCode && $a2CurrencySymbol) {
+                    $currencyCode = $a2CurrencyCode;
+                    $currencySymbol = $a2CurrencySymbol;
                     $this->command->info("Found base currency from a2_ec_settings: {$currencyCode} ({$currencySymbol})");
                 } else {
-                    $this->command->warn('a2_ec_settings table exists but is empty. Using default USD/$');
+                    $this->command->warn('a2_ec_settings table exists but currency_code or currency_symbol not found. Using default USD/$');
                 }
             } else {
                 $this->command->warn('a2_ec_settings table does not exist. Using default USD/$');
@@ -52,7 +57,7 @@ class ATUMultiCurrencySeeder extends Seeder
 
         // Create default currency
         DB::table('atu_multicurrency_currencies')->insert([
-            'code' => $currencyCode,
+            'code' => strtoupper($currencyCode),
             'symbol' => $currencySymbol,
             'rate' => '1.00000000',
             'is_auto' => false,

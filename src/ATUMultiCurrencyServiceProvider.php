@@ -12,6 +12,7 @@ use Vormia\ATUMultiCurrency\Console\Commands\ATUMultiCurrencyUIUninstallCommand;
 use Vormia\ATUMultiCurrency\Console\Commands\ATUMultiCurrencyUIUpdateCommand;
 use Vormia\ATUMultiCurrency\Support\Installer;
 use Vormia\ATUMultiCurrency\Support\SettingsManager;
+use Vormia\ATUMultiCurrency\Support\CurrencySyncService;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\ServiceProvider;
@@ -31,6 +32,7 @@ class ATUMultiCurrencyServiceProvider extends ServiceProvider
         });
 
         $this->app->singleton(SettingsManager::class);
+        $this->app->singleton(CurrencySyncService::class);
     }
 
     public function boot(): void

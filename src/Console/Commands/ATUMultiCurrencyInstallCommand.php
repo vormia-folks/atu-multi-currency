@@ -114,7 +114,16 @@ class ATUMultiCurrencyInstallCommand extends Command
         // Update .env
         if (File::exists($envPath)) {
             $content = File::get($envPath);
-            if (strpos($content, 'ATU_CURRENCY_API_KEY') === false) {
+            // Check if any of the ATU Multi-Currency keys are missing
+            $keysToCheck = ['ATU_CURRENCY_API_KEY', 'ATU_CURRENCY_UPDATE_FREQUENCY', 'ATU_CURRENCY_SETTINGS_SOURCE'];
+            $hasAllKeys = true;
+            foreach ($keysToCheck as $key) {
+                if (strpos($content, $key) === false) {
+                    $hasAllKeys = false;
+                    break;
+                }
+            }
+            if (!$hasAllKeys) {
                 File::append($envPath, $envBlock);
             }
         }
@@ -122,7 +131,16 @@ class ATUMultiCurrencyInstallCommand extends Command
         // Update .env.example
         if (File::exists($envExamplePath)) {
             $content = File::get($envExamplePath);
-            if (strpos($content, 'ATU_CURRENCY_API_KEY') === false) {
+            // Check if any of the ATU Multi-Currency keys are missing
+            $keysToCheck = ['ATU_CURRENCY_API_KEY', 'ATU_CURRENCY_UPDATE_FREQUENCY', 'ATU_CURRENCY_SETTINGS_SOURCE'];
+            $hasAllKeys = true;
+            foreach ($keysToCheck as $key) {
+                if (strpos($content, $key) === false) {
+                    $hasAllKeys = false;
+                    break;
+                }
+            }
+            if (!$hasAllKeys) {
                 File::append($envExamplePath, $envBlock);
             }
         }
