@@ -84,16 +84,14 @@ new class extends Component {
             ]);
 
             $this->notifySuccess(__('Currency created successfully!'));
-            return $this->redirect(route('admin.atu.currencies.index'), navigate: true);
         } catch (\Exception $e) {
             $this->notifyError(__('Failed to create currency: ' . $e->getMessage()));
         }
     }
 
-    public function cancel(): void
+    public function cancel()
     {
         $this->notifyInfo(__('Currency creation cancelled!'));
-        return $this->redirect(route('admin.atu.currencies.index'), navigate: true);
     }
 }; ?>
 

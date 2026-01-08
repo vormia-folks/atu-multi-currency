@@ -119,10 +119,9 @@ new class extends Component {
     }
 
     // Cancel
-    public function cancel(): void
+    public function cancel()
     {
         $this->notifyInfo(__('Currency update cancelled!'));
-        return $this->redirect(route('admin.atu.currencies.index'), navigate: true);
     }
 }; ?>
 
