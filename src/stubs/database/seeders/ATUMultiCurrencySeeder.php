@@ -1,0 +1,69 @@
+<?php
+
+namespace Database\Seeders;
+
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+
+class ATUMultiCurrencySeeder extends Seeder
+{
+    /**
+     * Run the database seeds.
+     */
+    public function run(): void
+    {
+        // Check if default currency already exists
+        $existingDefault = DB::table('atu_multicurrency_currencies')
+            ->where('is_default', true)
+            ->first();
+
+        if ($existingDefault) {
+            $this->command->info('Default currency already exists. Skipping seeder.');
+            return;
+        }
+
+        // Try to read base currency from a2_ec_settings
+        $currencyCode = 'USD';
+        $currencySymbol = '$';
+
+        try {
+            if (DB::getSchemaBuilder()->hasTable('a2_ec_settings')) {
+                $settings = DB::table('a2_ec_settings')->first();
+
+                if ($settings) {
+                    // Try to get currency_code and currency_symbol from settings
+                    $currencyCode = $settings->currency_code ?? $currencyCode;
+                    $currencySymbol = $settings->currency_symbol ?? $currencySymbol;
+
+                    $this->command->info("Found base currency from a2_ec_settings: {$currencyCode} ({$currencySymbol})");
+                } else {
+                    $this->command->warn('a2_ec_settings table exists but is empty. Using default USD/$');
+                }
+            } else {
+                $this->command->warn('a2_ec_settings table does not exist. Using default USD/$');
+            }
+        } catch (\Exception $e) {
+            $this->command->warn("Could not read from a2_ec_settings: {$e->getMessage()}. Using default USD/$");
+            Log::warning('ATU Multi-Currency: Could not read from a2_ec_settings', [
+                'error' => $e->getMessage()
+            ]);
+        }
+
+        // Create default currency
+        DB::table('atu_multicurrency_currencies')->insert([
+            'code' => $currencyCode,
+            'symbol' => $currencySymbol,
+            'rate' => '1.00000000',
+            'is_auto' => false,
+            'fee' => null,
+            'is_default' => true,
+            'country_taxonomy_id' => null,
+            'is_active' => true,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->command->info("✅ Default currency created: {$currencyCode} ({$currencySymbol}) with rate 1.00000000");
+    }
+}
