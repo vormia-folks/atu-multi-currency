@@ -270,14 +270,13 @@ class ATUMultiCurrencyInstallCommand extends Command
 
         $this->comment('📋 Next steps:');
         $this->line('   1. Review and configure your .env file with currency API settings (if needed)');
-        $this->line('   2. Verify the currency routes in routes/api.php (if added)');
 
         if (!$migrationsRun) {
-            $this->line('   3. Run migrations: php artisan migrate');
-            $this->line('   4. Run seeders: php artisan db:seed --class=ATUMultiCurrencySeeder');
-            $this->line('   5. Review the implementation guide: docs/build-guide.md');
+            $this->line('   2. Run migrations: php artisan migrate');
+            $this->line('   3. Run seeders: php artisan db:seed --class=ATUMultiCurrencySeeder');
+            $this->line('   4. Review the implementation guide: multi-currency-guide.md');
         } else {
-            $this->line('   3. Review the implementation guide: docs/build-guide.md');
+            $this->line('   2. Review the implementation guide: multi-currency-guide.md');
         }
 
         $this->newLine();
