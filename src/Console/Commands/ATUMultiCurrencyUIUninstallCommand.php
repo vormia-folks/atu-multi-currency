@@ -98,7 +98,7 @@ class ATUMultiCurrencyUIUninstallCommand extends Command
         }
 
         $filesToBackup = [
-            resource_path('views/livewire/admin/atu') => $backupDir . '/views/livewire/admin/atu',
+            resource_path('views/livewire/admin/atu/currencies') => $backupDir . '/views/livewire/admin/atu/currencies',
             base_path('routes/web.php') => $backupDir . '/routes/web.php',
             resource_path('views/components/layouts/app/sidebar.blade.php') => $backupDir . '/views/components/layouts/app/sidebar.blade.php',
         ];
@@ -118,11 +118,11 @@ class ATUMultiCurrencyUIUninstallCommand extends Command
     }
 
     /**
-     * Remove UI files
+     * Remove UI files (only currencies directory)
      */
     private function removeUIFiles(): void
     {
-        $uiPath = resource_path('views/livewire/admin/atu');
+        $uiPath = resource_path('views/livewire/admin/atu/currencies');
 
         if (File::exists($uiPath)) {
             File::deleteDirectory($uiPath);
@@ -133,7 +133,7 @@ class ATUMultiCurrencyUIUninstallCommand extends Command
     }
 
     /**
-     * Remove routes from routes/web.php by exact line matching
+     * Remove routes from routes/web.php by removing the entire Route::group block
      */
     private function removeRoutes(): void
     {
@@ -145,71 +145,38 @@ class ATUMultiCurrencyUIUninstallCommand extends Command
         }
 
         $content = File::get($routesPath);
-        $lines = explode("\n", $content);
 
-        // Define exact route patterns to match (with flexible whitespace)
-        $routePatterns = [
-            // Currencies routes
-            "/\s*Volt::route\s*\(\s*['\"]currencies['\"]\s*,\s*['\"]admin\.atu\.currencies\.index['\"]\s*\)\s*->name\s*\(\s*['\"]admin\.atu\.currencies\.index['\"]\s*\)\s*;/",
-            "/\s*Volt::route\s*\(\s*['\"]currencies\/create['\"]\s*,\s*['\"]admin\.atu\.currencies\.create['\"]\s*\)\s*->name\s*\(\s*['\"]admin\.atu\.currencies\.create['\"]\s*\)\s*;/",
-            "/\s*Volt::route\s*\(\s*['\"]currencies\/edit\/\{id\}['\"]\s*,\s*['\"]admin\.atu\.currencies\.edit['\"]\s*\)\s*->name\s*\(\s*['\"]admin\.atu\.currencies\.edit['\"]\s*\)\s*;/",
-            "/\s*Volt::route\s*\(\s*['\"]currencies\/settings['\"]\s*,\s*['\"]admin\.atu\.currencies\.settings['\"]\s*\)\s*->name\s*\(\s*['\"]admin\.atu\.currencies\.settings['\"]\s*\)\s*;/",
-        ];
-
-        // Also match comment lines that might be associated with these routes
-        $commentPatterns = [
-            "/\s*\/\/\s*ATU\s*Multi-Currency\s*Routes/",
-            "/\s*\/\/\s*Currencies/",
-        ];
-
-        $removedCount = 0;
-        $newLines = [];
-
-        foreach ($lines as $line) {
-            $shouldRemove = false;
-
-            // Check if line matches any route pattern
-            foreach ($routePatterns as $pattern) {
-                if (preg_match($pattern, $line)) {
-                    $shouldRemove = true;
-                    $removedCount++;
-                    break;
-                }
-            }
-
-            // Check if line matches comment patterns (only if it's a comment line)
-            if (!$shouldRemove && preg_match('/^\s*\/\//', $line)) {
-                foreach ($commentPatterns as $pattern) {
-                    if (preg_match($pattern, $line)) {
-                        $shouldRemove = true;
-                        break;
-                    }
-                }
-            }
-
-            if (!$shouldRemove) {
-                $newLines[] = $line;
-            }
-        }
-
-        // Remove empty Route::group blocks that might be left behind
-        $content = implode("\n", $newLines);
+        // Pattern to match the entire Route::group block (lines 8-15 from routes-to-add.php)
+        // Match from Route::group(['prefix' => 'admin/atu'] to the closing });
+        // This will match the entire block including all 5 Volt::route lines (10-14)
         
-        // Remove empty Route::group(['prefix' => 'admin/atu'], function () { }); blocks
-        $content = preg_replace('/Route::group\s*\(\s*\[\s*[\'"]prefix[\'"]\s*=>\s*[\'"]admin\/atu[\'"]\s*\]\s*,\s*function\s*\(\s*\)\s*\{\s*\}\s*\)\s*;/s', '', $content);
-        
-        // Remove Route::group opening with only whitespace/comments before closing
-        $content = preg_replace('/Route::group\s*\(\s*\[\s*[\'"]prefix[\'"]\s*=>\s*[\'"]admin\/atu[\'"]\s*\]\s*,\s*function\s*\(\s*\)\s*\{\s*(?:\/\/.*?\n\s*)*\}\s*\)\s*;/s', '', $content);
+        // More flexible pattern that matches the block with any whitespace variations
+        $pattern = '/
+            Route::group\s*\(\s*\[\s*[\'"]prefix[\'"]\s*=>\s*[\'"]admin\/atu[\'"]\s*\]\s*,\s*function\s*\(\s*\)\s*\{
+            .*?
+            Volt::route\s*\(\s*[\'"]currencies[\'"]\s*,\s*[\'"]admin\.atu\.currencies\.index[\'"]\s*\)\s*->name\s*\(\s*[\'"]admin\.atu\.currencies\.index[\'"]\s*\)\s*;
+            .*?
+            Volt::route\s*\(\s*[\'"]currencies\/create[\'"]\s*,\s*[\'"]admin\.atu\.currencies\.create[\'"]\s*\)\s*->name\s*\(\s*[\'"]admin\.atu\.currencies\.create[\'"]\s*\)\s*;
+            .*?
+            Volt::route\s*\(\s*[\'"]currencies\/edit\/\{id\}[\'"]\s*,\s*[\'"]admin\.atu\.currencies\.edit[\'"]\s*\)\s*->name\s*\(\s*[\'"]admin\.atu\.currencies\.edit[\'"]\s*\)\s*;
+            .*?
+            Volt::route\s*\(\s*[\'"]currencies\/settings[\'"]\s*,\s*[\'"]admin\.atu\.currencies\.settings[\'"]\s*\)\s*->name\s*\(\s*[\'"]admin\.atu\.currencies\.settings[\'"]\s*\)\s*;
+            .*?
+            Volt::route\s*\(\s*[\'"]currencies\/logs[\'"]\s*,\s*[\'"]admin\.atu\.currencies\.logs[\'"]\s*\)\s*->name\s*\(\s*[\'"]admin\.atu\.currencies\.logs[\'"]\s*\)\s*;
+            .*?
+            \}\s*;
+        /sx';
 
-        // Clean up extra whitespace
-        $content = preg_replace('/\n\s*\n\s*\n+/', "\n\n", $content);
+        $updatedContent = preg_replace($pattern, '', $content, -1, $count);
 
-        File::put($routesPath, $content);
-        
-        if ($removedCount > 0) {
-            $this->info("✅ Removed {$removedCount} route(s) successfully.");
+        if ($count > 0) {
+            // Clean up extra whitespace (3+ consecutive newlines to 2)
+            $updatedContent = preg_replace('/\n\s*\n\s*\n+/', "\n\n", $updatedContent);
+            
+            File::put($routesPath, $updatedContent);
+            $this->info('✅ Removed currency routes block successfully.');
         } else {
-            $this->warn('⚠️  No matching routes found to remove.');
+            $this->warn('⚠️  No matching routes block found to remove.');
         }
     }
 

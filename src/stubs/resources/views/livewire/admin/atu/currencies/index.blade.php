@@ -112,15 +112,24 @@ new class extends Component {
 			{{ __('You can create, edit, activate/deactivate, or delete currencies here.') }}
 		</x-slot>
 		<x-slot name="button">
-			<a href="{{ route('admin.atu.currencies.create') }}"
-				class="bg-blue-500 dark:bg-blue-600 text-white hover:bg-blue-600 dark:hover:bg-blue-700 px-3 py-2 rounded-md float-right text-sm font-bold">
-				<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4 inline-block">
-					<path fill-rule="evenodd"
-						d="M12 3.75a.75.75 0 0 1 .75.75v6.75h6.75a.75.75 0 0 1 0 1.5h-6.75v6.75a.75.75 0 0 1-1.5 0v-6.75H4.5a.75.75 0 0 1 0-1.5h6.75V4.5a.75.75 0 0 1 .75-.75Z"
-						clip-rule="evenodd" />
-				</svg>
-				Add New Currency
-			</a>
+			<div class="float-right flex gap-2">
+				<a href="{{ route('admin.atu.currencies.logs') }}"
+					class="bg-gray-500 dark:bg-gray-600 text-white hover:bg-gray-600 dark:hover:bg-gray-700 px-3 py-2 rounded-md text-sm font-bold">
+					<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-4 inline-block">
+						<path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+					</svg>
+					View Logs
+				</a>
+				<a href="{{ route('admin.atu.currencies.create') }}"
+					class="bg-blue-500 dark:bg-blue-600 text-white hover:bg-blue-600 dark:hover:bg-blue-700 px-3 py-2 rounded-md text-sm font-bold">
+					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="size-4 inline-block">
+						<path fill-rule="evenodd"
+							d="M12 3.75a.75.75 0 0 1 .75.75v6.75h6.75a.75.75 0 0 1 0 1.5h-6.75v6.75a.75.75 0 0 1-1.5 0v-6.75H4.5a.75.75 0 0 1 0-1.5h6.75V4.5a.75.75 0 0 1 .75-.75Z"
+							clip-rule="evenodd" />
+					</svg>
+					Add New Currency
+				</a>
+			</div>
 		</x-slot>
 
 		{{-- Search & Filter --}}

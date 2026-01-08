@@ -11,4 +11,5 @@ Route::group(['prefix' => 'admin/atu'], function () {
     Volt::route('currencies/create', 'admin.atu.currencies.create')->name('admin.atu.currencies.create');
     Volt::route('currencies/edit/{id}', 'admin.atu.currencies.edit')->name('admin.atu.currencies.edit');
     Volt::route('currencies/settings', 'admin.atu.currencies.settings')->name('admin.atu.currencies.settings');
+    Volt::route('currencies/logs', 'admin.atu.currencies.logs')->name('admin.atu.currencies.logs');
 });
