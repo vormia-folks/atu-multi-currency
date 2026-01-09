@@ -11,6 +11,9 @@ The package follows a core principle: **A2 Commerce owns truth** - all prices st
 ## Features
 
 - **Currency Management** - Support for multiple currencies with automatic or manual rate management
+- **Flexible Currency Codes** - Support for 3-4 character currency codes (ISO 4217 compatible, e.g., USD, EUR, ZAR)
+- **Currency Name Support** - Optional full descriptive names for currencies (e.g., "South African Rand", "United States Dollar")
+- **Smart Fallback Logic** - Automatic fallback between currency code and symbol if one is empty
 - **Conversion Logging** - Immutable audit trail of all currency conversions
 - **Rate History** - Track historical exchange rates for accurate reporting
 - **Fee Configuration** - Optional per-currency conversion fees
@@ -199,12 +202,15 @@ The package creates three database tables with the `atu_multicurrency_` prefix:
 
 Holds supported currencies and conversion rules:
 
-- Currency code (ISO 4217)
-- Symbol
+- Currency code (ISO 4217, 3-4 characters: USD, EUR, ZAR)
+- Currency symbol (e.g., $, €, R)
+- Currency name (optional full descriptive name, e.g., "South African Rand")
 - Exchange rate
 - Fee configuration
 - Default currency flag
 - Active status
+
+**Note:** Currency code and symbol support automatic fallback - if one is empty, it will use the other automatically.
 
 ### `atu_multicurrency_currency_rates_log`
 
@@ -261,8 +267,9 @@ You can add additional currencies by inserting records into the `atu_multicurren
 
 ```php
 DB::table('atu_multicurrency_currencies')->insert([
-    'code' => 'KES',
-    'symbol' => 'KSh',
+    'code' => 'ZAR',  // 3-4 character currency code (ISO 4217)
+    'symbol' => 'R',  // Currency symbol
+    'name' => 'South African Rand',  // Optional full descriptive name
     'rate' => '130.50000000',
     'is_auto' => true,
     'fee' => null,
@@ -272,6 +279,19 @@ DB::table('atu_multicurrency_currencies')->insert([
     'updated_at' => now(),
 ]);
 ```
+
+**Currency Code and Symbol:**
+
+- Currency codes support 3-4 characters (e.g., USD, EUR, ZAR)
+- If currency code is empty, the symbol will be used as the code automatically
+- If currency symbol is empty, the code will be used as the symbol automatically
+- At least one of code or symbol must be provided
+
+**Currency Name:**
+
+- Optional field for full descriptive names
+- Useful for display purposes and better user experience
+- Examples: "United States Dollar", "South African Rand", "Kenyan Shilling"
 
 ## UI Installation
 
@@ -408,9 +428,13 @@ For issues, questions, or contributions:
 - Review [A2Commerce documentation](https://github.com/a2-atu/a2commerce) for base functionality
 - Open an issue on the package repository
 
+## Release Notes
+
+For detailed release notes and changelog, see [RELEASE_NOTES_v0.1.1.md](RELEASE_NOTES_v0.1.1.md).
+
 ## Version
 
-Current version: **0.1.0**
+Current version: **0.1.1**
 
 ---
 
