@@ -430,11 +430,14 @@ For issues, questions, or contributions:
 
 ## Release Notes
 
-For detailed release notes and changelog, see [RELEASE_NOTES_v0.1.1.md](RELEASE_NOTES_v0.1.1.md).
+For detailed release notes and changelog, see:
+
+- [RELEASE_NOTES_v1.0.0.md](RELEASE_NOTES_v1.0.0.md) - Latest stable release
+- [RELEASE_NOTES_v0.1.1.md](RELEASE_NOTES_v0.1.1.md) - Previous release
 
 ## Version
 
-Current version: **0.1.1**
+Current version: **1.0.0**
 
 ---
 
