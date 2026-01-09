@@ -436,7 +436,8 @@ This package follows [Semantic Versioning](https://semver.org/) and uses git tag
 
 The following versions are available:
 
-- **v1.0.1** - Latest stable release
+- **v1.0.2** - Latest stable release
+- **v1.0.1** - Previous release
 - **v1.0.0** - Stable release with full feature set
 - **v0.2.1** - Previous release
 - **v0.2.0** - Previous release
@@ -476,12 +477,13 @@ git checkout $(git describe --tags --abbrev=0)
 
 For detailed release notes and changelog, see:
 
+- [RELEASE_NOTES_v1.0.2.md](RELEASE_NOTES_v1.0.2.md) - Latest release (v1.0.2)
 - [RELEASE_NOTES_v1.0.0.md](RELEASE_NOTES_v1.0.0.md) - v1.0.0 stable release
 - [RELEASE_NOTES_v0.1.1.md](RELEASE_NOTES_v0.1.1.md) - v0.1.1 release
 
 ### Latest Release
 
-**Current version: v1.0.1**
+**Current version: v1.0.2**
 
 The latest release includes:
 - Enhanced currency data access using Eloquent models
