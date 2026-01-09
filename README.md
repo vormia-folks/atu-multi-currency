@@ -31,6 +31,7 @@ The package follows a core principle: **A2 Commerce owns truth** - all prices st
 ### Required Dependencies
 
 - **vormiaphp/vormia**: Required for core functionality and database structure
+
   - Used for user management, taxonomies, and meta data handling
   - See [Vormia installation guide](https://github.com/vormiaphp/vormia) for installation instructions
 
@@ -106,6 +107,7 @@ php artisan atumulticurrency:install
 ```
 
 **Options:**
+
 - `--skip-env`: Do not modify .env files
 - `--no-overwrite`: Skip existing files instead of replacing
 
@@ -118,10 +120,12 @@ php artisan atumulticurrency:refresh
 ```
 
 **Options:**
+
 - `--force`: Skip confirmation prompts
 - `--seed`: Force re-seeding
 
 This command will:
+
 - Rollback and re-run migrations for `atu_multicurrency_*` tables
 - Re-run seeders to restore base currency
 - Clear all application caches
@@ -135,6 +139,7 @@ php artisan atumulticurrency:uninstall
 ```
 
 **Options:**
+
 - `--keep-env`: Preserve environment variables
 - `--force`: Skip confirmation prompts
 
@@ -155,18 +160,18 @@ After installation, you can configure the package in `config/atu-multi-currency.
 ```php
 return [
     'default_currency' => env('A2_CURRENCY', 'USD'),
-    
+
     'api' => [
         'key' => env('ATU_CURRENCY_API_KEY', ''),
         'update_frequency' => env('ATU_CURRENCY_UPDATE_FREQUENCY', 'daily'),
     ],
-    
+
     'conversion' => [
         'apply_fees' => true,
         'log_conversions' => true,
         'round_precision' => 2,
     ],
-    
+
     'table_prefix' => 'atu_multicurrency_',
 ];
 ```
@@ -193,6 +198,7 @@ The package creates three database tables with the `atu_multicurrency_` prefix:
 ### `atu_multicurrency_currencies`
 
 Holds supported currencies and conversion rules:
+
 - Currency code (ISO 4217)
 - Symbol
 - Exchange rate
@@ -203,6 +209,7 @@ Holds supported currencies and conversion rules:
 ### `atu_multicurrency_currency_rates_log`
 
 Tracks historical exchange rates:
+
 - Currency reference
 - Rate value
 - Source (manual or API)
@@ -211,6 +218,7 @@ Tracks historical exchange rates:
 ### `atu_multicurrency_currency_conversion_log`
 
 Immutable audit trail of all conversions:
+
 - Entity type and ID
 - Conversion context
 - Base and target currencies
@@ -230,6 +238,7 @@ Immutable audit trail of all conversions:
 ### Seeding Base Currency
 
 The package automatically seeds the base currency from A2Commerce settings during installation. The seeder reads:
+
 - `currency_code` from `a2_ec_settings` → `atu_multicurrency_currencies.code`
 - `currency_symbol` from `a2_ec_settings` → `atu_multicurrency_currencies.symbol`
 
@@ -273,6 +282,7 @@ php artisan atumulticurrency:ui-install
 ```
 
 This will automatically:
+
 - Copy UI view files to `resources/views/livewire/admin/atu/`
 - Attempt to inject routes into `routes/web.php`
 - Attempt to inject sidebar menu items into `resources/views/components/layouts/app/sidebar.blade.php`
@@ -287,7 +297,7 @@ use Livewire\Volt\Volt;
 
 Route::prefix('admin/atu/currencies')->name('admin.atu.currencies.')->group(function () {
     // Currencies
-    Volt::route('', 'admin.atu.currencies.index')->name('index');
+    Volt::route('/', 'admin.atu.currencies.index')->name('index');
     Volt::route('create', 'admin.atu.currencies.create')->name('create');
     Volt::route('edit/{id}', 'admin.atu.currencies.edit')->name('edit');
     Volt::route('settings', 'admin.atu.currencies.settings')->name('settings');
@@ -326,6 +336,7 @@ If automatic sidebar menu injection fails, manually add the following menu items
 ```
 
 **Reference Files:**
+
 - Routes: `vendor/vormiaphp/atu-multicurrency/src/stubs/reference/routes-to-add.php`
 - Sidebar Menu: `vendor/vormiaphp/atu-multicurrency/src/stubs/reference/sidebar-menu-to-add.blade.php`
 
@@ -350,6 +361,7 @@ composer remove vormia-folks/atu-multi-currency
 ```
 
 **Note:** The uninstall command will:
+
 - Remove all copied files and stubs
 - Remove routes from `routes/api.php`
 - Optionally drop database tables (with confirmation)
@@ -361,12 +373,14 @@ composer remove vormia-folks/atu-multi-currency
 ### Seeder Fails
 
 If the seeder fails because `a2_ec_settings` table doesn't exist:
+
 - Ensure A2Commerce is installed and migrations have been run
 - The seeder will fallback to USD/$ if the table is missing
 
 ### Migration Errors
 
 If migrations fail:
+
 - Ensure all A2Commerce migrations have been run first
 - Check that the database connection is configured correctly
 - Verify foreign key constraints are supported
@@ -374,6 +388,7 @@ If migrations fail:
 ### Currency Not Found
 
 If base currency is not found:
+
 - Run the seeder manually: `php artisan db:seed --class=ATUMultiCurrencySeeder`
 - Check that `a2_ec_settings` table exists and has currency data
 
@@ -388,6 +403,7 @@ This package is open-sourced software licensed under the [MIT license](https://o
 ## Support
 
 For issues, questions, or contributions:
+
 - Check the documentation in `docs/build-guide.md`
 - Review [A2Commerce documentation](https://github.com/a2-atu/a2commerce) for base functionality
 - Open an issue on the package repository
