@@ -485,11 +485,13 @@ For detailed release notes and changelog, see:
 
 **Current version: v1.0.2**
 
-The latest release includes:
+The latest release (v1.0.2) includes:
 - Enhanced currency data access using Eloquent models
 - Improved code readability and maintainability
 - Streamlined currency creation and editing logic
 - Better error handling across components
+- Comprehensive git tag versioning documentation
+- Updated README with version management information
 
 For detailed information about each release, check the release notes files or view the git tags:
 
