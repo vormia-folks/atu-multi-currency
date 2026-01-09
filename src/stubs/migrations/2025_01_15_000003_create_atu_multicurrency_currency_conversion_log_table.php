@@ -16,8 +16,8 @@ return new class extends Migration
             $table->string('entity_type', 50)->comment('product, order, report');
             $table->unsignedBigInteger('entity_id')->nullable()->comment('Related entity ID');
             $table->string('context', 50)->comment('save, preview, checkout, report');
-            $table->char('base_currency_code', 3)->comment('Source currency code');
-            $table->char('target_currency_code', 3)->comment('Target currency code');
+            $table->char('base_currency_code', 4)->comment('Source currency code (3-4 characters)');
+            $table->char('target_currency_code', 4)->comment('Target currency code (3-4 characters)');
             $table->decimal('base_amount', 18, 6)->comment('Original amount');
             $table->decimal('converted_amount', 18, 6)->comment('Converted amount');
             $table->decimal('rate_used', 18, 8)->comment('Conversion rate applied');

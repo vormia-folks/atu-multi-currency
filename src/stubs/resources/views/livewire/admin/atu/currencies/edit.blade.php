@@ -17,11 +17,14 @@ new class extends Component {
     public $currency;
 
     // Form fields
-    #[Validate('required|string|size:3')]
+    #[Validate('nullable|string|min:3|max:4')]
     public $code = '';
 
-    #[Validate('required|string|max:10')]
+    #[Validate('nullable|string|max:10')]
     public $symbol = '';
+
+    #[Validate('nullable|string|max:255')]
+    public $name = '';
 
     #[Validate('required|numeric|min:0.00000001')]
     public $rate = 1.0;
@@ -43,6 +46,7 @@ new class extends Component {
         if ($this->currency) {
             $this->code = $this->currency->code;
             $this->symbol = $this->currency->symbol;
+            $this->name = $this->currency->name ?? '';
             $this->rate = $this->currency->rate;
             $this->is_auto = $this->currency->is_auto;
             $this->fee = $this->currency->fee;
@@ -69,10 +73,33 @@ new class extends Component {
     // Update the Currency
     public function update(): void
     {
+        // Apply automatic fallback logic: if code is empty, use symbol; if symbol is empty, use code
+        if (empty(trim($this->code)) && !empty(trim($this->symbol))) {
+            $this->code = $this->symbol;
+        } elseif (empty(trim($this->symbol)) && !empty(trim($this->code))) {
+            $this->symbol = $this->code;
+        }
+
+        // Validate that at least one of code or symbol is provided
+        if (empty(trim($this->code)) && empty(trim($this->symbol))) {
+            $this->notifyError(__('Either Currency Code or Currency Symbol must be provided.'));
+            return;
+        }
+
+        // Validate code length after fallback
+        if (!empty(trim($this->code))) {
+            $codeLength = strlen(trim($this->code));
+            if ($codeLength < 3 || $codeLength > 4) {
+                $this->notifyError(__('Currency Code must be between 3 and 4 characters.'));
+                return;
+            }
+        }
+
         // Custom validation for code uniqueness (excluding current currency)
         $this->validate([
-            'code' => 'required|string|size:3',
-            'symbol' => 'required|string|max:10',
+            'code' => 'nullable|string|min:3|max:4',
+            'symbol' => 'nullable|string|max:10',
+            'name' => 'nullable|string|max:255',
             'rate' => 'required|numeric|min:0.00000001',
             'is_auto' => 'required|boolean',
             'fee' => 'nullable|numeric|min:0',
@@ -100,8 +127,9 @@ new class extends Component {
             DB::table('atu_multicurrency_currencies')
                 ->where('id', $this->currency_id)
                 ->update([
-                    'code' => strtoupper($this->code),
-                    'symbol' => $this->symbol,
+                    'code' => strtoupper(trim($this->code)),
+                    'symbol' => trim($this->symbol),
+                    'name' => !empty(trim($this->name)) ? trim($this->name) : null,
                     'rate' => $this->currency->is_default ? 1.0 : $this->rate,
                     'is_auto' => $this->is_auto,
                     'fee' => $this->fee,
@@ -187,30 +215,44 @@ new class extends Component {
 
                             <div class="grid max-w-2xl grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6 md:col-span-2">
                                 <div class="col-span-full sm:col-span-3">
-                                    <label for="code" class="block text-sm/6 font-medium text-gray-900 dark:text-gray-100 required">Currency Code</label>
+                                    <label for="code" class="block text-sm/6 font-medium text-gray-900 dark:text-gray-100">Currency Code</label>
                                     <div class="mt-2">
                                         <div
                                             class="flex items-center rounded-md bg-white dark:bg-gray-700 pl-3 outline-1 -outline-offset-1 outline-gray-300 dark:outline-gray-600 focus-within:outline-2 focus-within:-outline-offset-2 focus-within:outline-indigo-600">
-                                            <input type="text" id="code" wire:model="code" placeholder="USD, EUR, GBP, etc."
-                                                maxlength="3"
+                                            <input type="text" id="code" wire:model="code" placeholder="USD, EUR, ZAR, etc."
+                                                maxlength="4"
                                                 class="block min-w-0 grow py-1.5 pr-3 pl-1 text-base text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none sm:text-sm/6 uppercase" />
                                         </div>
                                         <span class="text-red-500 text-sm italic"> {{ $errors->first('code') }}</span>
-                                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">ISO 4217 currency code (e.g., USD, EUR, GBP)</p>
+                                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">ISO 4217 currency code (3-4 characters, e.g., USD, EUR, ZAR). If empty, will use Currency Symbol.</p>
                                     </div>
                                 </div>
 
                                 <div class="col-span-full sm:col-span-3">
-                                    <label for="symbol" class="block text-sm/6 font-medium text-gray-900 dark:text-gray-100 required">Currency Symbol</label>
+                                    <label for="symbol" class="block text-sm/6 font-medium text-gray-900 dark:text-gray-100">Currency Symbol</label>
                                     <div class="mt-2">
                                         <div
                                             class="flex items-center rounded-md bg-white dark:bg-gray-700 pl-3 outline-1 -outline-offset-1 outline-gray-300 dark:outline-gray-600 focus-within:outline-2 focus-within:-outline-offset-2 focus-within:outline-indigo-600">
-                                            <input type="text" id="symbol" wire:model="symbol" placeholder="$, €, £, etc."
+                                            <input type="text" id="symbol" wire:model="symbol" placeholder="$, €, R, etc."
                                                 maxlength="10"
                                                 class="block min-w-0 grow py-1.5 pr-3 pl-1 text-base text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none sm:text-sm/6" />
                                         </div>
                                         <span class="text-red-500 text-sm italic"> {{ $errors->first('symbol') }}</span>
-                                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Currency symbol to display (e.g., $, €, £)</p>
+                                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Currency symbol to display (e.g., $, €, R). If empty, will use Currency Code.</p>
+                                    </div>
+                                </div>
+
+                                <div class="col-span-full">
+                                    <label for="name" class="block text-sm/6 font-medium text-gray-900 dark:text-gray-100">Currency Name</label>
+                                    <div class="mt-2">
+                                        <div
+                                            class="flex items-center rounded-md bg-white dark:bg-gray-700 pl-3 outline-1 -outline-offset-1 outline-gray-300 dark:outline-gray-600 focus-within:outline-2 focus-within:-outline-offset-2 focus-within:outline-indigo-600">
+                                            <input type="text" id="name" wire:model="name" placeholder="United States Dollar, South African Rand, etc."
+                                                maxlength="255"
+                                                class="block min-w-0 grow py-1.5 pr-3 pl-1 text-base text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none sm:text-sm/6" />
+                                        </div>
+                                        <span class="text-red-500 text-sm italic"> {{ $errors->first('name') }}</span>
+                                        <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">Optional: Full descriptive name of the currency (e.g., "South African Rand", "United States Dollar")</p>
                                     </div>
                                 </div>
 

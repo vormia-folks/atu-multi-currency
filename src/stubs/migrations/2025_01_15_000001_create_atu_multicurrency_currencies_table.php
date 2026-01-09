@@ -13,8 +13,9 @@ return new class extends Migration
     {
         Schema::create('atu_multicurrency_currencies', function (Blueprint $table) {
             $table->id();
-            $table->char('code', 3)->comment('ISO 4217 currency code (USD, KES, ZAR)');
+            $table->char('code', 4)->comment('ISO 4217 currency code (3-4 characters: USD, KES, ZAR)');
             $table->string('symbol', 10)->comment('Currency symbol ($, KSh, R)');
+            $table->string('name')->nullable()->comment('Full currency name (e.g., South African Rand, United States Dollar)');
             $table->decimal('rate', 18, 8)->comment('1 unit = ? base currency');
             $table->boolean('is_auto')->default(false)->comment('API-managed or manual');
             $table->decimal('fee', 12, 4)->nullable()->comment('Optional per-currency fee');
