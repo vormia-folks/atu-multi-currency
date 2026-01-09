@@ -428,16 +428,76 @@ For issues, questions, or contributions:
 - Review [A2Commerce documentation](https://github.com/a2-atu/a2commerce) for base functionality
 - Open an issue on the package repository
 
+## Versioning and Git Tags
+
+This package follows [Semantic Versioning](https://semver.org/) and uses git tags to mark releases. Each release is tagged with a version number (e.g., `v1.0.0`, `v1.0.1`).
+
+### Available Versions
+
+The following versions are available:
+
+- **v1.0.1** - Latest stable release
+- **v1.0.0** - Stable release with full feature set
+- **v0.2.1** - Previous release
+- **v0.2.0** - Previous release
+- **v0.1.0** - Initial release
+
+### Installing Specific Versions
+
+You can install a specific version using Composer:
+
+```sh
+# Install latest stable version
+composer require vormia-folks/atu-multi-currency
+
+# Install specific version
+composer require vormia-folks/atu-multi-currency:^1.0.1
+
+# Install from git tag (development)
+composer require vormia-folks/atu-multi-currency:dev-main
+```
+
+### Checking Out a Specific Git Tag
+
+If you're working with the source code directly:
+
+```sh
+# List all available tags
+git tag --list
+
+# Checkout a specific version
+git checkout v1.0.1
+
+# Or checkout the latest tag
+git checkout $(git describe --tags --abbrev=0)
+```
+
 ## Release Notes
 
 For detailed release notes and changelog, see:
 
-- [RELEASE_NOTES_v1.0.0.md](RELEASE_NOTES_v1.0.0.md) - Latest stable release
-- [RELEASE_NOTES_v0.1.1.md](RELEASE_NOTES_v0.1.1.md) - Previous release
+- [RELEASE_NOTES_v1.0.0.md](RELEASE_NOTES_v1.0.0.md) - v1.0.0 stable release
+- [RELEASE_NOTES_v0.1.1.md](RELEASE_NOTES_v0.1.1.md) - v0.1.1 release
 
-## Version
+### Latest Release
 
-Current version: **1.0.0**
+**Current version: v1.0.1**
+
+The latest release includes:
+- Enhanced currency data access using Eloquent models
+- Improved code readability and maintainability
+- Streamlined currency creation and editing logic
+- Better error handling across components
+
+For detailed information about each release, check the release notes files or view the git tags:
+
+```sh
+# View release information for a specific tag
+git show v1.0.1 --no-patch
+
+# View all commits for a specific version
+git log v1.0.0..v1.0.1 --oneline
+```
 
 ---
 
