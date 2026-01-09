@@ -2,8 +2,8 @@
 
 use Livewire\Volt\Component;
 use Livewire\Attributes\Validate;
-use Illuminate\Support\Facades\DB;
 use App\Traits\Vrm\Livewire\WithNotifications;
+use Vormia\ATUMultiCurrency\Models\Currency;
 use Vormia\ATUMultiCurrency\Support\SettingsManager;
 
 new class extends Component {
@@ -26,9 +26,7 @@ new class extends Component {
         $settingsManager = app(SettingsManager::class);
 
         // Get default currency
-        $defaultCurrency = DB::table('atu_multicurrency_currencies')
-            ->where('is_default', true)
-            ->first();
+        $defaultCurrency = Currency::where('is_default', true)->first();
         $this->default_currency_code = $defaultCurrency ? $defaultCurrency->code : 'USD';
 
         // Get settings source

@@ -4,6 +4,7 @@ namespace Vormia\ATUMultiCurrency\Support;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Vormia\ATUMultiCurrency\Models\Currency;
 
 class CurrencySyncService
 {
@@ -130,13 +131,10 @@ class CurrencySyncService
             self::$syncing = true;
 
             // Update default currency code and symbol
-            DB::table('atu_multicurrency_currencies')
-                ->where('id', $defaultCurrency->id)
-                ->update([
-                    'code' => strtoupper($a2Currency['code']),
-                    'symbol' => $a2Currency['symbol'],
-                    'updated_at' => now(),
-                ]);
+            $defaultCurrency->update([
+                'code' => strtoupper($a2Currency['code']),
+                'symbol' => $a2Currency['symbol'],
+            ]);
 
             Log::info('ATU MultiCurrency: Successfully synced from A2Commerce to default currency', [
                 'code' => $a2Currency['code'],
@@ -210,16 +208,14 @@ class CurrencySyncService
      * 
      * @return object|null The default currency object or null if not found
      */
-    public function getDefaultCurrency(): ?object
+    public function getDefaultCurrency(): ?Currency
     {
         try {
             if (!DB::getSchemaBuilder()->hasTable('atu_multicurrency_currencies')) {
                 return null;
             }
 
-            return DB::table('atu_multicurrency_currencies')
-                ->where('is_default', true)
-                ->first();
+            return Currency::where('is_default', true)->first();
         } catch (\Exception $e) {
             Log::error('ATU MultiCurrency: Failed to get default currency', [
                 'error' => $e->getMessage(),

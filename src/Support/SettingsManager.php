@@ -4,6 +4,7 @@ namespace Vormia\ATUMultiCurrency\Support;
 
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Config;
+use Vormia\ATUMultiCurrency\Models\Setting;
 
 class SettingsManager
 {
@@ -19,13 +20,10 @@ class SettingsManager
         $settingsSource = config('atu-multi-currency.settings_source', 'file');
 
         if ($settingsSource === 'database') {
-            $setting = DB::table('atu_multicurrency_settings')
-                ->where('key', $key)
-                ->first();
+            $setting = Setting::where('key', $key)->first();
 
             if ($setting && $setting->value !== null) {
-                $decoded = json_decode($setting->value, true);
-                return json_last_error() === JSON_ERROR_NONE ? $decoded : $setting->value;
+                return $setting->decoded_value;
             }
         }
 
@@ -48,14 +46,10 @@ class SettingsManager
             return false;
         }
 
-        $jsonValue = is_array($value) || is_object($value) 
-            ? json_encode($value) 
-            : $value;
-
         try {
-            DB::table('atu_multicurrency_settings')->updateOrInsert(
+            Setting::updateOrInsert(
                 ['key' => $key],
-                ['value' => $jsonValue, 'updated_at' => now()]
+                ['value' => $value]
             );
 
             return true;
@@ -74,12 +68,11 @@ class SettingsManager
         $settingsSource = config('atu-multi-currency.settings_source', 'file');
 
         if ($settingsSource === 'database') {
-            $settings = DB::table('atu_multicurrency_settings')->get();
+            $settings = Setting::all();
             $result = [];
 
             foreach ($settings as $setting) {
-                $decoded = json_decode($setting->value, true);
-                $result[$setting->key] = json_last_error() === JSON_ERROR_NONE ? $decoded : $setting->value;
+                $result[$setting->key] = $setting->decoded_value;
             }
 
             return $result;

@@ -3,8 +3,8 @@
 use Livewire\WithPagination;
 use Livewire\Volt\Component;
 use Livewire\Attributes\Computed;
-use Illuminate\Support\Facades\DB;
 use App\Traits\Vrm\Livewire\WithNotifications;
+use Vormia\ATUMultiCurrency\Models\CurrencyConversionLog;
 
 new class extends Component {
     use WithPagination;
@@ -36,31 +36,27 @@ new class extends Component {
     #[Computed]
     public function results()
     {
-        $query = DB::table('atu_multicurrency_currency_conversion_log')
-            ->leftJoin('atu_multicurrency_currencies', 'atu_multicurrency_currency_conversion_log.currency_id', '=', 'atu_multicurrency_currencies.id')
-            ->leftJoin('users', 'atu_multicurrency_currency_conversion_log.user_id', '=', 'users.id')
-            ->select(
-                'atu_multicurrency_currency_conversion_log.*',
-                'atu_multicurrency_currencies.code as currency_code',
-                'atu_multicurrency_currencies.symbol as currency_symbol',
-                'users.name as user_name',
-                'users.email as user_email'
-            );
+        $query = CurrencyConversionLog::with(['currency', 'user']);
 
         // Apply search filter
         if (!empty($this->search)) {
-            $query->where(function ($q) {
-                $q->where('atu_multicurrency_currency_conversion_log.entity_type', 'like', '%' . $this->search . '%')
-                  ->orWhere('atu_multicurrency_currency_conversion_log.base_currency_code', 'like', '%' . $this->search . '%')
-                  ->orWhere('atu_multicurrency_currency_conversion_log.target_currency_code', 'like', '%' . $this->search . '%')
-                  ->orWhere('atu_multicurrency_currencies.code', 'like', '%' . $this->search . '%')
-                  ->orWhere('users.name', 'like', '%' . $this->search . '%')
-                  ->orWhere('users.email', 'like', '%' . $this->search . '%');
+            $searchTerm = $this->search;
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('entity_type', 'like', '%' . $searchTerm . '%')
+                  ->orWhere('base_currency_code', 'like', '%' . $searchTerm . '%')
+                  ->orWhere('target_currency_code', 'like', '%' . $searchTerm . '%')
+                  ->orWhereHas('currency', function ($currencyQuery) use ($searchTerm) {
+                      $currencyQuery->where('code', 'like', '%' . $searchTerm . '%');
+                  })
+                  ->orWhereHas('user', function ($userQuery) use ($searchTerm) {
+                      $userQuery->where('name', 'like', '%' . $searchTerm . '%')
+                                 ->orWhere('email', 'like', '%' . $searchTerm . '%');
+                  });
             });
         }
 
         // Order by occurred_at desc by default
-        $query->orderBy('atu_multicurrency_currency_conversion_log.occurred_at', 'desc');
+        $query->orderBy('occurred_at', 'desc');
 
         return $query->paginate($this->perPage);
     }
@@ -133,7 +129,7 @@ new class extends Component {
 								$_conversion_display = number_format($row->base_amount, 2) . ' ' . $row->base_currency_code . ' → ' . number_format($row->converted_amount, 2) . ' ' . $row->target_currency_code;
 
 								// Format user display
-								$_user_display = $row->user_name ?: ($row->user_email ?: 'System');
+								$_user_display = $row->user ? ($row->user->name ?: ($row->user->email ?: 'System')) : 'System';
 
 								// Format date
 								$_date_display = $row->occurred_at ? \Carbon\Carbon::parse($row->occurred_at)->format('Y-m-d H:i:s') : '-';
@@ -223,15 +219,15 @@ new class extends Component {
 											<div>
 												<dt class="text-sm font-medium text-gray-500 dark:text-gray-400">Currency</dt>
 												<dd class="mt-1 text-sm text-gray-900 dark:text-gray-100">
-													{{ $row->currency_code }} ({{ $row->currency_symbol }})
+													{{ $row->currency ? $row->currency->code : '-' }} ({{ $row->currency ? $row->currency->symbol : '-' }})
 												</dd>
 											</div>
 											<div>
 												<dt class="text-sm font-medium text-gray-500 dark:text-gray-400">User</dt>
 												<dd class="mt-1 text-sm text-gray-900 dark:text-gray-100">
 													{{ $_user_display }}
-													@if ($row->user_email)
-														<br><span class="text-gray-400 text-xs">{{ $row->user_email }}</span>
+													@if ($row->user && $row->user->email)
+														<br><span class="text-gray-400 text-xs">{{ $row->user->email }}</span>
 													@endif
 												</dd>
 											</div>

@@ -3,8 +3,8 @@
 use Livewire\Volt\Component;
 use Livewire\Attributes\Validate;
 use Livewire\Attributes\Computed;
-use Illuminate\Support\Facades\DB;
 use App\Traits\Vrm\Livewire\WithNotifications;
+use Vormia\ATUMultiCurrency\Models\Currency;
 use Vormia\ATUMultiCurrency\Support\CurrencySyncService;
 
 new class extends Component {
@@ -41,7 +41,7 @@ new class extends Component {
     public function mount($id): void
     {
         $this->currency_id = $id;
-        $this->currency = DB::table('atu_multicurrency_currencies')->where('id', $this->currency_id)->first();
+        $this->currency = Currency::find($this->currency_id);
 
         if ($this->currency) {
             $this->code = $this->currency->code;
@@ -65,9 +65,7 @@ new class extends Component {
     #[Computed]
     public function default_currency()
     {
-        return DB::table('atu_multicurrency_currencies')
-            ->where('is_default', true)
-            ->first();
+        return Currency::where('is_default', true)->first();
     }
 
     // Update the Currency
@@ -107,8 +105,7 @@ new class extends Component {
         ]);
 
         // Check if code already exists (excluding current currency)
-        $codeExists = DB::table('atu_multicurrency_currencies')
-            ->where('code', strtoupper($this->code))
+        $codeExists = Currency::where('code', strtoupper($this->code))
             ->where('id', '!=', $this->currency_id)
             ->exists();
 
@@ -124,18 +121,15 @@ new class extends Component {
         }
 
         try {
-            DB::table('atu_multicurrency_currencies')
-                ->where('id', $this->currency_id)
-                ->update([
-                    'code' => strtoupper(trim($this->code)),
-                    'symbol' => trim($this->symbol),
-                    'name' => !empty(trim($this->name)) ? trim($this->name) : null,
-                    'rate' => $this->currency->is_default ? 1.0 : $this->rate,
-                    'is_auto' => $this->is_auto,
-                    'fee' => $this->fee,
-                    'country_taxonomy_id' => $this->country_taxonomy_id,
-                    'updated_at' => now(),
-                ]);
+            $this->currency->update([
+                'code' => strtoupper(trim($this->code)),
+                'symbol' => trim($this->symbol),
+                'name' => !empty(trim($this->name)) ? trim($this->name) : null,
+                'rate' => $this->currency->is_default ? 1.0 : $this->rate,
+                'is_auto' => $this->is_auto,
+                'fee' => $this->fee,
+                'country_taxonomy_id' => $this->country_taxonomy_id,
+            ]);
 
             // If this is the default currency, sync with a2_ec_settings
             if ($this->currency->is_default) {
@@ -144,7 +138,7 @@ new class extends Component {
             }
 
             // Refresh currency data
-            $this->currency = DB::table('atu_multicurrency_currencies')->where('id', $this->currency_id)->first();
+            $this->currency->refresh();
             $this->rate = $this->currency->rate;
 
             $this->notifySuccess(__('Currency updated successfully!'));

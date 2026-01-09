@@ -3,8 +3,8 @@
 use Livewire\Volt\Component;
 use Livewire\Attributes\Validate;
 use Livewire\Attributes\Computed;
-use Illuminate\Support\Facades\DB;
 use App\Traits\Vrm\Livewire\WithNotifications;
+use Vormia\ATUMultiCurrency\Models\Currency;
 use Vormia\ATUMultiCurrency\Support\CurrencySyncService;
 
 new class extends Component {
@@ -34,9 +34,7 @@ new class extends Component {
     public function mount()
     {
         // Get default currency for rate display
-        $defaultCurrency = DB::table('atu_multicurrency_currencies')
-            ->where('is_default', true)
-            ->first();
+        $defaultCurrency = Currency::where('is_default', true)->first();
         
         if ($defaultCurrency) {
             $this->rate = 1.0; // Default rate is 1:1 with default currency
@@ -54,9 +52,7 @@ new class extends Component {
     #[Computed]
     public function default_currency()
     {
-        return DB::table('atu_multicurrency_currencies')
-            ->where('is_default', true)
-            ->first();
+        return Currency::where('is_default', true)->first();
     }
 
     public function save()
@@ -87,9 +83,7 @@ new class extends Component {
 
         try {
             // Check if code already exists
-            $exists = DB::table('atu_multicurrency_currencies')
-                ->where('code', strtoupper($this->code))
-                ->exists();
+            $exists = Currency::where('code', strtoupper($this->code))->exists();
 
             if ($exists) {
                 $this->notifyError(__('Currency code already exists.'));
@@ -99,16 +93,14 @@ new class extends Component {
             $isDefault = false;
             
             // Check if this should be the default currency (only if no default exists)
-            $existingDefault = DB::table('atu_multicurrency_currencies')
-                ->where('is_default', true)
-                ->exists();
+            $existingDefault = Currency::where('is_default', true)->exists();
             
             if (!$existingDefault) {
                 $isDefault = true;
                 $this->rate = 1.0; // Default currency must have rate 1.0
             }
 
-            DB::table('atu_multicurrency_currencies')->insert([
+            Currency::create([
                 'code' => strtoupper(trim($this->code)),
                 'symbol' => trim($this->symbol),
                 'name' => !empty(trim($this->name)) ? trim($this->name) : null,
@@ -118,8 +110,6 @@ new class extends Component {
                 'country_taxonomy_id' => $this->country_taxonomy_id,
                 'is_default' => $isDefault,
                 'is_active' => true,
-                'created_at' => now(),
-                'updated_at' => now(),
             ]);
 
             // If this is the default currency, sync with A2Commerce

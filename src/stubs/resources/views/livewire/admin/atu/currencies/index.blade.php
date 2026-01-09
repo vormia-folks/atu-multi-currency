@@ -4,8 +4,8 @@ use Livewire\Attributes\On;
 use Livewire\WithPagination;
 use Livewire\Volt\Component;
 use Livewire\Attributes\Computed;
-use Illuminate\Support\Facades\DB;
 use App\Traits\Vrm\Livewire\WithNotifications;
+use Vormia\ATUMultiCurrency\Models\Currency;
 use Vormia\ATUMultiCurrency\Support\CurrencySyncService;
 
 new class extends Component {
@@ -38,7 +38,7 @@ new class extends Component {
     #[Computed]
     public function results()
     {
-        $query = DB::table('atu_multicurrency_currencies');
+        $query = Currency::query();
 
         // Apply search filter
         if (!empty($this->search)) {
@@ -56,7 +56,7 @@ new class extends Component {
     public function toggleActive($currencyId)
     {
         try {
-            $currency = DB::table('atu_multicurrency_currencies')->where('id', $currencyId)->first();
+            $currency = Currency::find($currencyId);
 
             if (!$currency) {
                 $this->notifyError(__('Currency not found.'));
@@ -69,9 +69,7 @@ new class extends Component {
                 return;
             }
 
-            DB::table('atu_multicurrency_currencies')
-                ->where('id', $currencyId)
-                ->update(['is_active' => !$currency->is_active]);
+            $currency->update(['is_active' => !$currency->is_active]);
 
             $this->notifySuccess(__('Currency status updated successfully!'));
         } catch (\Exception $e) {
@@ -82,7 +80,7 @@ new class extends Component {
     public function delete($currencyId)
     {
         try {
-            $currency = DB::table('atu_multicurrency_currencies')->where('id', $currencyId)->first();
+            $currency = Currency::find($currencyId);
 
             if (!$currency) {
                 $this->notifyError(__('Currency not found.'));
@@ -95,7 +93,7 @@ new class extends Component {
                 return;
             }
 
-            DB::table('atu_multicurrency_currencies')->where('id', $currencyId)->delete();
+            $currency->delete();
 
             $this->notifySuccess(__('Currency deleted successfully!'));
         } catch (\Exception $e) {
@@ -106,7 +104,7 @@ new class extends Component {
     public function setDefault($currencyId)
     {
         try {
-            $currency = DB::table('atu_multicurrency_currencies')->where('id', $currencyId)->first();
+            $currency = Currency::find($currencyId);
 
             if (!$currency) {
                 $this->notifyError(__('Currency not found.'));
@@ -125,31 +123,26 @@ new class extends Component {
                 return;
             }
 
-            DB::beginTransaction();
+            \DB::beginTransaction();
 
             // Remove default flag from current default currency
-            DB::table('atu_multicurrency_currencies')
-                ->where('is_default', true)
-                ->update(['is_default' => false]);
+            Currency::where('is_default', true)->update(['is_default' => false]);
 
             // Set new default currency (rate must be 1.0)
-            DB::table('atu_multicurrency_currencies')
-                ->where('id', $currencyId)
-                ->update([
-                    'is_default' => true,
-                    'rate' => '1.00000000',
-                    'updated_at' => now(),
-                ]);
+            $currency->update([
+                'is_default' => true,
+                'rate' => '1.00000000',
+            ]);
 
             // Sync to A2Commerce
             $syncService = app(CurrencySyncService::class);
             $syncService->syncToA2Commerce();
 
-            DB::commit();
+            \DB::commit();
 
             $this->notifySuccess(__('Default currency updated successfully!'));
         } catch (\Exception $e) {
-            DB::rollBack();
+            \DB::rollBack();
             $this->notifyError(__('Failed to set default currency: ' . $e->getMessage()));
         }
     }
@@ -232,7 +225,7 @@ new class extends Component {
 								}
 
 								// Get default currency code for rate display
-								$_default_currency = DB::table('atu_multicurrency_currencies')->where('is_default', true)->first();
+								$_default_currency = Currency::where('is_default', true)->first();
 								$_default_code = $_default_currency ? $_default_currency->code : 'USD';
 
 								// Check if row is expanded

@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Vormia\ATUMultiCurrency\Models\Currency;
 
 class ATUMultiCurrencySeeder extends Seeder
 {
@@ -14,9 +15,7 @@ class ATUMultiCurrencySeeder extends Seeder
     public function run(): void
     {
         // Check if default currency already exists
-        $existingDefault = DB::table('atu_multicurrency_currencies')
-            ->where('is_default', true)
-            ->first();
+        $existingDefault = Currency::where('is_default', true)->first();
 
         if ($existingDefault) {
             $this->command->info('Default currency already exists. Skipping seeder.');
@@ -33,7 +32,7 @@ class ATUMultiCurrencySeeder extends Seeder
                 $a2CurrencyCode = DB::table('a2_ec_settings')
                     ->where('key', 'currency_code')
                     ->value('value');
-                
+
                 $a2CurrencySymbol = DB::table('a2_ec_settings')
                     ->where('key', 'currency_symbol')
                     ->value('value');
@@ -56,7 +55,7 @@ class ATUMultiCurrencySeeder extends Seeder
         }
 
         // Create default currency
-        DB::table('atu_multicurrency_currencies')->insert([
+        Currency::create([
             'code' => strtoupper($currencyCode),
             'symbol' => $currencySymbol,
             'rate' => '1.00000000',
@@ -65,8 +64,6 @@ class ATUMultiCurrencySeeder extends Seeder
             'is_default' => true,
             'country_taxonomy_id' => null,
             'is_active' => true,
-            'created_at' => now(),
-            'updated_at' => now(),
         ]);
 
         $this->command->info("✅ Default currency created: {$currencyCode} ({$currencySymbol}) with rate 1.00000000");
