@@ -10,7 +10,10 @@ use Illuminate\Support\Facades\File;
 
 class ATUMultiCurrencyInstallCommand extends Command
 {
-    protected $signature = 'atumulticurrency:install {--skip-env : Do not modify .env files} {--no-overwrite : Skip existing files instead of replacing}';
+    protected $signature = 'atumulticurrency:install
+                            {--api : Install core only (skip routes and UI resources)}
+                            {--skip-env : Do not modify .env files}
+                            {--no-overwrite : Skip existing files instead of replacing}';
 
     protected $description = 'Install ATU Multi-Currency package with all necessary files and configurations';
 
@@ -20,10 +23,12 @@ class ATUMultiCurrencyInstallCommand extends Command
 
         $overwrite = !$this->option('no-overwrite');
         $touchEnv = !$this->option('skip-env');
+        $apiOnly = (bool) $this->option('api');
 
         // Use Installer's install method to ensure files are tracked correctly for uninstall.
         $this->step('Copying ATU Multi-Currency files and stubs...');
-        $results = $installer->install($overwrite, false);
+        // Use positional args for best IDE/linter compatibility.
+        $results = $installer->install($overwrite, false, !$apiOnly, !$apiOnly);
 
         // Show detailed output grouped by directory
         $this->displayCopyResults($results['copied']);
@@ -37,8 +42,13 @@ class ATUMultiCurrencyInstallCommand extends Command
         }
 
         // Step 3: Routes
-        $this->step('Ensuring API routes...');
-        $this->handleRoutes($results['routes'] ?? []);
+        if ($apiOnly) {
+            $this->step('Skipping routes modification (--api flag used)...');
+            $this->line('   ⏭️  No route files were modified.');
+        } else {
+            $this->step('Ensuring API routes...');
+            $this->handleRoutes($results['routes'] ?? []);
+        }
 
         // Step 4: Migrations
         $migrationsRun = $this->handleMigrations();

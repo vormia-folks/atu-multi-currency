@@ -27,7 +27,6 @@ The package follows a core principle: **A2 Commerce owns truth** - all prices st
 - PHP 8.2+
 - Laravel 12.x
 - Vormia 4.2+ (must be installed first)
-- A2Commerce 0.1.6+ (must be installed first)
 
 ## Dependencies
 
@@ -38,15 +37,11 @@ The package follows a core principle: **A2 Commerce owns truth** - all prices st
   - Used for user management, taxonomies, and meta data handling
   - See [Vormia installation guide](https://github.com/vormiaphp/vormia) for installation instructions
 
-- **a2-atu/a2commerce**: Required for e-commerce functionality
-  - Provides the base commerce system that this package extends
-  - See [A2Commerce installation guide](https://github.com/a2-atu/a2commerce) for installation instructions
-
-The package will automatically check for required dependencies during installation and provide helpful error messages if they're missing.
+ATU Multi-Currency can integrate with A2Commerce if present (e.g. syncing base currency via the `a2_ec_settings` table), but **A2Commerce is not required** to install or use the package.
 
 ## Installation
 
-Before installing ATU Multi-Currency, ensure you have Laravel, Vormia, and A2Commerce installed. See the [A2Commerce installation guide](https://github.com/a2-atu/a2commerce) for detailed instructions on installing A2Commerce and its dependencies.
+Before installing ATU Multi-Currency, ensure you have Laravel and Vormia installed.
 
 ### Step 1: Install ATU Multi-Currency
 
@@ -72,6 +67,7 @@ This will automatically install ATU Multi-Currency with all files and configurat
 
 **Installation Options:**
 
+- `--api`: Core-only install (skip modifying route files and skip copying UI resources)
 - `--no-overwrite`: Keep existing files instead of replacing them
 - `--skip-env`: Leave `.env` files untouched
 
@@ -80,6 +76,9 @@ This will automatically install ATU Multi-Currency with all files and configurat
 ```sh
 # Install without overwriting existing files
 php artisan atumulticurrency:install --no-overwrite
+
+# Install core only (API-only usage)
+php artisan atumulticurrency:install --api
 
 # Install without modifying .env files
 php artisan atumulticurrency:install --skip-env
@@ -295,7 +294,7 @@ DB::table('atu_multicurrency_currencies')->insert([
 
 ## UI Installation
 
-After installing the base package, you can install the UI components:
+After installing the base package, you can install the UI components (admin views, web routes, sidebar injection):
 
 ```sh
 php artisan atumulticurrency:ui-install

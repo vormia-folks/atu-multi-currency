@@ -35,11 +35,24 @@ PHP;
      *
      * @return array{copied: array, env: array, routes: array}
      */
-    public function install(bool $overwrite = true, bool $touchEnv = true): array
+    public function install(
+        bool $overwrite = true,
+        bool $touchEnv = true,
+        bool $includeRoutes = true,
+        bool $includeResources = true
+    ): array
     {
-        $copied = $this->copyStubs($overwrite);
+        $copied = $this->copyStubs($overwrite, $includeResources);
         $envChanges = $touchEnv ? $this->ensureEnvKeys() : [];
-        $routes = $this->ensureRoutes();
+        $routes = $includeRoutes
+            ? $this->ensureRoutes()
+            : [
+                'path' => $this->pathJoin($this->appBasePath, 'routes', 'api.php'),
+                'added' => false,
+                'import_added' => false,
+                'skipped' => true,
+                'skipped_by_option' => true,
+            ];
 
         return ['copied' => $copied, 'env' => $envChanges, 'routes' => $routes];
     }
@@ -66,7 +79,7 @@ PHP;
         return ['removed' => $removed, 'env' => $env, 'routes' => $routes];
     }
 
-    private function copyStubs(bool $overwrite): array
+    private function copyStubs(bool $overwrite, bool $includeResources = true): array
     {
         $results = ['copied' => [], 'skipped' => []];
         $stubFiles = $this->files->allFiles($this->stubsPath);
@@ -77,6 +90,11 @@ PHP;
                 continue;
             }
             $relative = ltrim(Str::after($file->getPathname(), $this->stubsPath), '/\\');
+
+            if (!$includeResources && str_starts_with(str_replace('\\', '/', $relative), 'resources/')) {
+                continue;
+            }
+
             [$root, $subPath] = $this->splitRoot($relative);
             $target = $this->targetPath($root, $subPath);
 

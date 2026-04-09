@@ -52,7 +52,7 @@ class ATUMultiCurrencyHelpCommand extends Command
             [
                 'command' => 'atumulticurrency:install',
                 'description' => 'Install ATU Multi-Currency package with all files and configurations',
-                'options' => '--no-overwrite (keep existing files), --skip-env (leave .env untouched)'
+                'options' => '--api (core only, no routes/UI), --no-overwrite (keep existing files), --skip-env (leave .env untouched)'
             ],
             [
                 'command' => 'atumulticurrency:refresh',
@@ -94,6 +94,11 @@ class ATUMultiCurrencyHelpCommand extends Command
                 'title' => 'Installation',
                 'command' => 'php artisan atumulticurrency:install',
                 'description' => 'Install ATU Multi-Currency with all files and configurations'
+            ],
+            [
+                'title' => 'API-only Installation (Core Only)',
+                'command' => 'php artisan atumulticurrency:install --api',
+                'description' => 'Install core only (skips routes modification and UI resources)'
             ],
             [
                 'title' => 'Install (Preserve Existing Files)',
