@@ -6,7 +6,7 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
-        "laravel/framework": "^12.0",
+        "laravel/framework": "^12.0 || ^13.0",
         "vormiaphp/vormia": "^4.4"
     },
     "suggest": {},
