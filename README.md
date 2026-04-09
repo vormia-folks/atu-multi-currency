@@ -25,8 +25,8 @@ The package follows a core principle: **A2 Commerce owns truth** - all prices st
 ## Requirements
 
 - PHP 8.2+
-- Laravel 12.x
-- Vormia 4.2+ (must be installed first)
+- Laravel 12.x / 13.x
+- Vormia 5.x (must be installed first)
 
 ## Dependencies
 
@@ -386,7 +386,7 @@ All API controllers return JSON via `App\Traits\Vrm\Model\ApiResponseTrait`.
 For detailed implementation guides and architecture documentation, see:
 
 - **Build Guide**: `docs/build-guide.md` - Authoritative implementation guide
-- **UI Build Guide**: `docs/build-ui-guide.md` - UI controls and admin settings guide
+- **UI Build Guide**: `docs/build-ui-guide.md` - UI install/update/uninstall + admin pages guide
 - **A2Commerce Documentation**: See [A2Commerce GitHub repository](https://github.com/a2-atu/a2commerce) for installation and usage documentation
 
 ## Uninstallation
@@ -495,26 +495,7 @@ git checkout $(git describe --tags --abbrev=0)
 ```
 
 ## Release Notes
-
-For detailed release notes and changelog, see:
-
-- [RELEASE_NOTES_v1.0.2.md](RELEASE_NOTES_v1.0.2.md) - Latest release (v1.0.2)
-- [RELEASE_NOTES_v1.0.0.md](RELEASE_NOTES_v1.0.0.md) - v1.0.0 stable release
-- [RELEASE_NOTES_v0.1.1.md](RELEASE_NOTES_v0.1.1.md) - v0.1.1 release
-
-### Latest Release
-
-**Current version: v1.0.2**
-
-The latest release (v1.0.2) includes:
-- Enhanced currency data access using Eloquent models
-- Improved code readability and maintainability
-- Streamlined currency creation and editing logic
-- Better error handling across components
-- Comprehensive git tag versioning documentation
-- Updated README with version management information
-
-For detailed information about each release, check the release notes files or view the git tags:
+This package uses git tags for releases. To see what changed between versions, compare tags or view your repository’s release notes (GitHub Releases / changelog, depending on where you publish).
 
 ```sh
 # View release information for a specific tag
