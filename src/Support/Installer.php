@@ -17,9 +17,26 @@ class Installer
     private const ROUTE_MARK_END = '// >>> ATU Multi-Currency Routes END';
     private const ROUTE_BLOCK = <<<'PHP'
 // >>> ATU Multi-Currency Routes START
-// Currency switching endpoints (if needed)
+// ATU Multi-Currency API endpoints (uncomment as needed)
 // Route::prefix('atu/currency')->group(function () {
-//     Route::post('/switch', [\App\Http\Controllers\ATU\MultiCurrency\CurrencyController::class, 'switch'])->name('api.currency.switch');
+//     // Public-ish
+//     Route::get('/', [\App\Http\Controllers\Api\Atu\Multicurrency\CurrencyController::class, 'index'])->name('api.atu.currency.index');
+//     Route::get('/current', [\App\Http\Controllers\Api\Atu\Multicurrency\CurrencyController::class, 'current'])->name('api.atu.currency.current');
+//     Route::post('/switch', [\App\Http\Controllers\Api\Atu\Multicurrency\CurrencyController::class, 'switch'])->name('api.atu.currency.switch');
+//
+//     // Admin-style actions (add middleware as needed)
+//     Route::post('/', [\App\Http\Controllers\Api\Atu\Multicurrency\CurrencyController::class, 'store'])->name('api.atu.currency.store');
+//     Route::put('/{id}', [\App\Http\Controllers\Api\Atu\Multicurrency\CurrencyController::class, 'update'])->name('api.atu.currency.update');
+//     Route::delete('/{id}', [\App\Http\Controllers\Api\Atu\Multicurrency\CurrencyController::class, 'destroy'])->name('api.atu.currency.destroy');
+//     Route::patch('/{id}/toggle-active', [\App\Http\Controllers\Api\Atu\Multicurrency\CurrencyController::class, 'toggleActive'])->name('api.atu.currency.toggle_active');
+//     Route::patch('/{id}/set-default', [\App\Http\Controllers\Api\Atu\Multicurrency\CurrencyController::class, 'setDefault'])->name('api.atu.currency.set_default');
+//
+//     // Settings
+//     Route::get('/settings', [\App\Http\Controllers\Api\Atu\Multicurrency\CurrencySettingsController::class, 'show'])->name('api.atu.currency.settings.show');
+//     Route::put('/settings', [\App\Http\Controllers\Api\Atu\Multicurrency\CurrencySettingsController::class, 'update'])->name('api.atu.currency.settings.update');
+//
+//     // Logs
+//     Route::get('/logs/conversions', [\App\Http\Controllers\Api\Atu\Multicurrency\CurrencyLogsController::class, 'conversionLogs'])->name('api.atu.currency.logs.conversions');
 // });
 // >>> ATU Multi-Currency Routes END
 PHP;

@@ -63,7 +63,7 @@ This will automatically install ATU Multi-Currency with all files and configurat
 - ✅ Seeder file copied to `database/seeders`
 - ✅ Configuration file copied to `config/atu-multi-currency.php`
 - ✅ Environment variables added to `.env` and `.env.example`
-- ✅ Currency routes (commented out) added to `routes/api.php`
+- ✅ Currency API routes (commented out) added to `routes/api.php`
 
 **Installation Options:**
 
@@ -358,6 +358,28 @@ If automatic sidebar menu injection fails, manually add the following menu items
 
 - Routes: `vendor/vormiaphp/atu-multicurrency/src/stubs/reference/routes-to-add.php`
 - Sidebar Menu: `vendor/vormiaphp/atu-multicurrency/src/stubs/reference/sidebar-menu-to-add.blade.php`
+
+## API Routes (Optional)
+
+During installation, ATU Multi-Currency appends a **commented** API route group to your `routes/api.php`.
+
+To enable the APIs, uncomment the block between:
+
+- `// >>> ATU Multi-Currency Routes START`
+- `// >>> ATU Multi-Currency Routes END`
+
+The enabled endpoints live under the `/atu/currency` prefix and include:
+
+- `GET /atu/currency` (list active currencies)
+- `GET /atu/currency/current` (current + default currency)
+- `POST /atu/currency/switch` (switch current currency by code)
+- `POST /atu/currency` / `PUT /atu/currency/{id}` / `DELETE /atu/currency/{id}` (CRUD)
+- `PATCH /atu/currency/{id}/toggle-active` (activate/deactivate)
+- `PATCH /atu/currency/{id}/set-default` (switch default currency)
+- `GET /atu/currency/settings` / `PUT /atu/currency/settings` (conversion settings)
+- `GET /atu/currency/logs/conversions` (conversion logs)
+
+All API controllers return JSON via `App\Traits\Vrm\Model\ApiResponseTrait`.
 
 ## Documentation
 

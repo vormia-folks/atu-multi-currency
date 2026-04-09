@@ -184,10 +184,24 @@ class ATUMultiCurrencyHelpCommand extends Command
         
         $this->line('  <fg=cyan>// >>> ATU Multi-Currency Routes START</>');
         $this->line('  <fg=cyan>// Route::prefix(\'atu/currency\')->group(function () {</>');
-        $this->line('  <fg=cyan>//     Route::post(\'/switch\', [</>');
-        $this->line('  <fg=cyan>//         \\App\\Http\\Controllers\\ATU\\MultiCurrency\\CurrencyController::class,</>');
-        $this->line('  <fg=cyan>//         \'switch\'</>');
-        $this->line('  <fg=cyan>//     ])->name(\'api.currency.switch\');</>');
+        $this->line('  <fg=cyan>//     // Public-ish</>');
+        $this->line('  <fg=cyan>//     Route::get(\'/\', [\\App\\Http\\Controllers\\Api\\Atu\\Multicurrency\\CurrencyController::class, \'index\'])->name(\'api.atu.currency.index\');</>');
+        $this->line('  <fg=cyan>//     Route::get(\'/current\', [\\App\\Http\\Controllers\\Api\\Atu\\Multicurrency\\CurrencyController::class, \'current\'])->name(\'api.atu.currency.current\');</>');
+        $this->line('  <fg=cyan>//     Route::post(\'/switch\', [\\App\\Http\\Controllers\\Api\\Atu\\Multicurrency\\CurrencyController::class, \'switch\'])->name(\'api.atu.currency.switch\');</>');
+        $this->line('  <fg=cyan>//</>');
+        $this->line('  <fg=cyan>//     // Admin-style actions (add middleware as needed)</>');
+        $this->line('  <fg=cyan>//     Route::post(\'/\', [\\App\\Http\\Controllers\\Api\\Atu\\Multicurrency\\CurrencyController::class, \'store\'])->name(\'api.atu.currency.store\');</>');
+        $this->line('  <fg=cyan>//     Route::put(\'/{id}\', [\\App\\Http\\Controllers\\Api\\Atu\\Multicurrency\\CurrencyController::class, \'update\'])->name(\'api.atu.currency.update\');</>');
+        $this->line('  <fg=cyan>//     Route::delete(\'/{id}\', [\\App\\Http\\Controllers\\Api\\Atu\\Multicurrency\\CurrencyController::class, \'destroy\'])->name(\'api.atu.currency.destroy\');</>');
+        $this->line('  <fg=cyan>//     Route::patch(\'/{id}/toggle-active\', [\\App\\Http\\Controllers\\Api\\Atu\\Multicurrency\\CurrencyController::class, \'toggleActive\'])->name(\'api.atu.currency.toggle_active\');</>');
+        $this->line('  <fg=cyan>//     Route::patch(\'/{id}/set-default\', [\\App\\Http\\Controllers\\Api\\Atu\\Multicurrency\\CurrencyController::class, \'setDefault\'])->name(\'api.atu.currency.set_default\');</>');
+        $this->line('  <fg=cyan>//</>');
+        $this->line('  <fg=cyan>//     // Settings</>');
+        $this->line('  <fg=cyan>//     Route::get(\'/settings\', [\\App\\Http\\Controllers\\Api\\Atu\\Multicurrency\\CurrencySettingsController::class, \'show\'])->name(\'api.atu.currency.settings.show\');</>');
+        $this->line('  <fg=cyan>//     Route::put(\'/settings\', [\\App\\Http\\Controllers\\Api\\Atu\\Multicurrency\\CurrencySettingsController::class, \'update\'])->name(\'api.atu.currency.settings.update\');</>');
+        $this->line('  <fg=cyan>//</>');
+        $this->line('  <fg=cyan>//     // Logs</>');
+        $this->line('  <fg=cyan>//     Route::get(\'/logs/conversions\', [\\App\\Http\\Controllers\\Api\\Atu\\Multicurrency\\CurrencyLogsController::class, \'conversionLogs\'])->name(\'api.atu.currency.logs.conversions\');</>');
         $this->line('  <fg=cyan>// });</>');
         $this->line('  <fg=cyan>// >>> ATU Multi-Currency Routes END</>');
         

@@ -45,10 +45,7 @@ This release introduces enhanced currency code support, optional currency names,
 ## 🔧 Technical Changes
 
 ### Migrations
-- **New Migration:** `2025_01_15_000005_alter_atu_multicurrency_tables_for_4char_codes.php`
-  - Alters existing tables to support 4-character codes
-  - Adds `name` column if it doesn't exist
-  - Safe to run on existing installations
+- Updated the initial create-table migrations to support 4-character currency codes and the optional currency `name` field (fresh installs only).
 
 ### Form Components
 - Updated `create.blade.php` with name field and fallback logic

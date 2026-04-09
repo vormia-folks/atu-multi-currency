@@ -116,11 +116,6 @@ This is the official v1.0.0 release of ATU Multi-Currency, marking the first sta
 - **Settings Migration:** `2025_01_15_000004_create_atu_multicurrency_settings_table.php`
   - Package settings storage
   
-- **Alter Migration:** `2025_01_15_000005_alter_atu_multicurrency_tables_for_4char_codes.php`
-  - Alters existing tables to support 4-character codes
-  - Adds `name` column if it doesn't exist
-  - Safe to run on existing installations
-
 ### Service Classes
 - **CurrencySyncService** - Handles synchronization with A2Commerce
 - **SettingsManager** - Manages package settings
