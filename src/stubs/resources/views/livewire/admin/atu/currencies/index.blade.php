@@ -4,7 +4,8 @@ use Livewire\Attributes\On;
 use Livewire\WithPagination;
 use Livewire\Volt\Component;
 use Livewire\Attributes\Computed;
-use App\Traits\Vrm\Livewire\WithNotifications;
+use Vormia\Vormia\Traits\Livewire\WithNotifications;
+use Vormia\Vormia\Models\Taxonomy;
 use Vormia\ATUMultiCurrency\Models\Currency;
 use Vormia\ATUMultiCurrency\Support\CurrencySyncService;
 
@@ -220,7 +221,7 @@ new class extends Component {
 								// Get country name if country_taxonomy_id exists
 								$_country_name = '-';
 								if ($row->country_taxonomy_id) {
-								    $_country = \App\Models\Vrm\Taxonomy::find($row->country_taxonomy_id);
+								    $_country = Taxonomy::find($row->country_taxonomy_id);
 								    $_country_name = $_country ? $_country->name : '-';
 								}
 

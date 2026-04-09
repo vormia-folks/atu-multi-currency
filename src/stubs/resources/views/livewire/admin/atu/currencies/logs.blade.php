@@ -3,7 +3,7 @@
 use Livewire\WithPagination;
 use Livewire\Volt\Component;
 use Livewire\Attributes\Computed;
-use App\Traits\Vrm\Livewire\WithNotifications;
+use Vormia\Vormia\Traits\Livewire\WithNotifications;
 use Vormia\ATUMultiCurrency\Models\CurrencyConversionLog;
 
 new class extends Component {

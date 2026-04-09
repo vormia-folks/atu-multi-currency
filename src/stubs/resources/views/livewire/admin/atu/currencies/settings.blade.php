@@ -2,7 +2,7 @@
 
 use Livewire\Volt\Component;
 use Livewire\Attributes\Validate;
-use App\Traits\Vrm\Livewire\WithNotifications;
+use Vormia\Vormia\Traits\Livewire\WithNotifications;
 use Vormia\ATUMultiCurrency\Models\Currency;
 use Vormia\ATUMultiCurrency\Support\SettingsManager;
 

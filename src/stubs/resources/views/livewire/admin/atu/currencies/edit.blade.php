@@ -3,7 +3,8 @@
 use Livewire\Volt\Component;
 use Livewire\Attributes\Validate;
 use Livewire\Attributes\Computed;
-use App\Traits\Vrm\Livewire\WithNotifications;
+use Vormia\Vormia\Traits\Livewire\WithNotifications;
+use Vormia\Vormia\Models\Taxonomy;
 use Vormia\ATUMultiCurrency\Models\Currency;
 use Vormia\ATUMultiCurrency\Support\CurrencySyncService;
 
@@ -57,7 +58,7 @@ new class extends Component {
     #[Computed]
     public function country_list()
     {
-        return \App\Models\Vrm\Taxonomy::where('group', 'country')
+        return Taxonomy::where('group', 'country')
             ->where('is_active', true)
             ->get();
     }
@@ -362,17 +363,25 @@ new class extends Component {
 </div>
 
 <script>
-	document.addEventListener('livewire:init', () => {
-		Livewire.on('livewire:load', () => {
-			// Initialize Select2 for country dropdown
-			if (jQuery && jQuery.fn.select2) {
-				jQuery('#country_select').select2({
-					theme: 'bootstrap-5',
-					width: '100%'
-				}).on('change', function (e) {
-					@this.set('country_taxonomy_id', e.target.value);
-				});
-			}
-		});
-	});
+	const initCountrySelect = () => {
+		// Initialize Select2 for country dropdown
+		if (!window.jQuery || !window.jQuery.fn?.select2) return;
+
+		const $select = window.jQuery('#country_select');
+		if (!$select.length) return;
+
+		// Avoid double-initializing when Livewire re-renders.
+		if ($select.data('select2')) return;
+
+		$select
+			.select2({ theme: 'bootstrap-5', width: '100%' })
+			.on('change', (e) => {
+				$wire.$set('country_taxonomy_id', e.target.value);
+			});
+	};
+
+	initCountrySelect();
+
+	// Re-init after wire:navigate swaps the page.
+	document.addEventListener('livewire:navigated', initCountrySelect);
 </script>
