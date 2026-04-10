@@ -18,7 +18,8 @@ class ATUMultiCurrencySeeder extends Seeder
         $existingDefault = Currency::where('is_default', true)->first();
 
         if ($existingDefault) {
-            $this->command->info('Default currency already exists. Skipping seeder.');
+            $this->info('Default currency already exists. Skipping seeder.');
+
             return;
         }
 
@@ -40,17 +41,17 @@ class ATUMultiCurrencySeeder extends Seeder
                 if ($a2CurrencyCode && $a2CurrencySymbol) {
                     $currencyCode = $a2CurrencyCode;
                     $currencySymbol = $a2CurrencySymbol;
-                    $this->command->info("Found base currency from a2_ec_settings: {$currencyCode} ({$currencySymbol})");
+                    $this->info("Found base currency from a2_ec_settings: {$currencyCode} ({$currencySymbol})");
                 } else {
-                    $this->command->warn('a2_ec_settings table exists but currency_code or currency_symbol not found. Using default USD/$');
+                    $this->warn('a2_ec_settings table exists but currency_code or currency_symbol not found. Using default USD/$');
                 }
             } else {
-                $this->command->warn('a2_ec_settings table does not exist. Using default USD/$');
+                $this->warn('a2_ec_settings table does not exist. Using default USD/$');
             }
         } catch (\Exception $e) {
-            $this->command->warn("Could not read from a2_ec_settings: {$e->getMessage()}. Using default USD/$");
+            $this->warn("Could not read from a2_ec_settings: {$e->getMessage()}. Using default USD/$");
             Log::warning('ATU Multi-Currency: Could not read from a2_ec_settings', [
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
             ]);
         }
 
@@ -66,6 +67,18 @@ class ATUMultiCurrencySeeder extends Seeder
             'is_active' => true,
         ]);
 
-        $this->command->info("✅ Default currency created: {$currencyCode} ({$currencySymbol}) with rate 1.00000000");
+        $this->info("Default currency created: {$currencyCode} ({$currencySymbol}) with rate 1.00000000");
+    }
+
+    private function info(string $message): void
+    {
+        $this->command?->info($message);
+        Log::info('ATU Multi-Currency seeder: ' . $message);
+    }
+
+    private function warn(string $message): void
+    {
+        $this->command?->warn($message);
+        Log::warning('ATU Multi-Currency seeder: ' . $message);
     }
 }
