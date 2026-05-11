@@ -1,59 +1,57 @@
 ## UI build guide (admin pages)
 
-ATU Multi-Currency ships optional admin UI assets (Volt/Livewire views + route/sidebar helpers) that you can install into your app.
+From **v2.x**, Volt admin views and `/admin/atu/currencies` routes are registered **from the package** when `livewire/volt` is installed. You normally do **not** copy Blade or Volt files into `resources/views` for day-to-day use.
 
-### Install UI
+The `ui-*` commands help verify optional layout packages, inject a **Flux** sidebar snippet if you want it, clear caches after upgrades, and clean up **legacy** files from older installs that copied views into the app.
+
+### Install UI (checks + optional sidebar)
 
 ```sh
 php artisan atumulticurrency:ui-install
+php artisan atumulticurrency:ui-install --inject-sidebar
 ```
 
-What it attempts to do:
+What this command does:
 
-- Copy admin views into `resources/views/livewire/admin/atu/`
-- Inject routes into `routes/web.php` (best-effort)
-- Inject sidebar menu items into `resources/views/components/layouts/app/sidebar.blade.php` (best-effort)
-- Clear application caches
+- Verifies **`vormiaphp/ui-livewireflux-admin`** (^2.0) is installed (required for the check to pass).
+- Verifies ATU migrations have been applied (`atu_multicurrency_currencies` exists).
+- If **`livewire/volt`** is missing, prints how to install it and points at reference routes.
+- If **`livewire/flux`** is installed and you pass **`--inject-sidebar`**, attempts to merge the menu snippet after the Platform nav group in `resources/views/components/layouts/app/sidebar.blade.php` (skips if markers already present).
+- Clears config, route, view, and application caches.
 
-If your project’s file layout differs from the default Vormia starter, automatic injection can fail. Use the manual steps below.
+If your layout path differs from the Flux starter, injection may fail; merge manually from the reference stub.
 
-### Manual route setup (recommended to verify)
+### Routes (normal v2 case)
 
-Add the routes in `routes/web.php` inside your authenticated admin group (example below). If your app doesn’t use Volt, adapt these routes to your routing style.
+With Volt installed, the package registers routes under **`/admin/atu/currencies`** (route names like `admin.atu.currencies.index`). No `routes/web.php` edits are required.
 
-```php
-use Livewire\Volt\Volt;
+### Manual route setup (only without Volt)
 
-Route::prefix('admin/atu/currencies')->name('admin.atu.currencies.')->group(function () {
-    Volt::route('/', 'admin.atu.currencies.index')->name('index');
-    Volt::route('create', 'admin.atu.currencies.create')->name('create');
-    Volt::route('edit/{id}', 'admin.atu.currencies.edit')->name('edit');
-    Volt::route('settings', 'admin.atu.currencies.settings')->name('settings');
-    Volt::route('logs', 'admin.atu.currencies.logs')->name('logs');
-});
-```
+If you cannot use Volt, adapt the reference file to your routing stack:
+
+- `src/stubs/reference/routes-to-add.php`
 
 ### Manual sidebar menu setup
 
-If sidebar injection fails, add the menu items into your sidebar view in the appropriate place for your layout.
-
-You can use the reference snippet shipped with the package:
+Reference snippet:
 
 - `src/stubs/reference/sidebar-menu-to-add.blade.php`
 
-### Updating UI assets
-
-If you installed UI earlier and want to re-copy/re-inject assets:
+### Updating after `composer update`
 
 ```sh
 php artisan atumulticurrency:ui-update
 ```
 
-### Uninstall UI assets
+Clears caches; UI templates live in `vendor`, so pulling a newer package version is enough for view changes.
+
+### Uninstall legacy copied UI (host files only)
 
 ```sh
 php artisan atumulticurrency:ui-uninstall
 ```
+
+Removes **legacy** copied views under `resources/views/livewire/admin/atu` and marked snippets in `routes/web.php` / sidebar if present from older workflows. Package routes still apply until you `composer remove` the package.
 
 ### What the UI screens cover
 
@@ -82,9 +80,9 @@ The UI layer **configures behavior** but does not own conversion logic.
 
 ### Read-only System Currency
 
-Source:
+Source (typical A2Commerce shape: `key` / `value` rows):
 
-- `a2_ec_settings.currency_code`
+- Row with `key` = `currency_code` in `a2_ec_settings`
 
 UI behavior:
 
@@ -197,7 +195,7 @@ UI Control:
 Rules:
 
 - Only one currency can be default
-- Default currency code **must equal** `a2_ec_settings.currency_code`
+- Default currency code **must equal** the `currency_code` value stored in `a2_ec_settings`
 - UI must prevent mismatch
 
 Display:

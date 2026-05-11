@@ -1,186 +1,130 @@
 # ATU Multi-Currency
 
-Laravel 12 package that provides currency normalization, conversion, display, and reporting support for A2 Commerce. This package extends A2Commerce functionality while keeping A2 core tables simple and authoritative.
+Laravel package for currency normalization, conversion, display, and reporting alongside A2 Commerce. Core commerce data stays in the **base system currency**; this package adds rates, logs, settings, and APIs without replacing A2 as the source of truth.
 
 ## Introduction
 
-ATU Multi-Currency is a comprehensive Laravel package designed to provide multi-currency support for e-commerce applications built on A2Commerce. The package acts as a projection layer that converts, decorates, logs, and reports currency conversions without mutating the core A2Commerce data.
+ATU Multi-Currency is a **projection layer**: it converts and decorates for display and reporting, keeps an audit trail, and syncs optional settings with A2Commerce when that stack is present.
 
-The package follows a core principle: **A2 Commerce owns truth** - all prices stored in A2Commerce tables remain in the base system currency, while ATU Multi-Currency handles all conversion complexity, rate management, and reporting.
+**A2 Commerce owns truth** — amounts in A2Commerce stay in base currency. ATU owns `atu_multicurrency_*` tables, conversion logs, and admin/API surfaces.
+
+**How the package is wired (v2.x)** — After `composer require`, Laravel loads **migrations, merged config, API routes, and (when Livewire Volt is installed) admin Volt routes** directly from the package under `vendor`. The installer **does not copy** migrations, controllers, or views into your app; it mainly ensures `.env` keys and walks you through migrate/seed.
 
 ## Features
 
-- **Currency Management** - Support for multiple currencies with automatic or manual rate management
-- **Flexible Currency Codes** - Support for 3-4 character currency codes (ISO 4217 compatible, e.g., USD, EUR, ZAR)
-- **Currency Name Support** - Optional full descriptive names for currencies (e.g., "South African Rand", "United States Dollar")
-- **Smart Fallback Logic** - Automatic fallback between currency code and symbol if one is empty
-- **Conversion Logging** - Immutable audit trail of all currency conversions
-- **Rate History** - Track historical exchange rates for accurate reporting
-- **Fee Configuration** - Optional per-currency conversion fees
-- **Base Currency Seeding** - Automatic seeding from A2Commerce settings
-- **Projection Layer** - Convert and display prices without mutating core data
-- **Reporting Support** - Multi-currency financial reporting capabilities
-- **Event-Driven** - Integrates seamlessly with A2Commerce event system
+- **Currency management** — Multiple currencies, manual or automatic rates, optional fees
+- **Flexible codes** — 3–4 character currency codes (ISO-style), optional display names
+- **Smart fallbacks** — Empty code or symbol falls back to the other when appropriate
+- **Conversion logging** — Immutable conversion audit rows
+- **Rate history** — Historical exchange rates
+- **Settings storage** — Database-backed settings (configurable via `ATU_CURRENCY_SETTINGS_SOURCE`)
+- **A2Commerce integration** — Optional read/sync of base currency via `a2_ec_settings` (key/value rows)
+- **JSON API** — Registered under `/api/atu/currency`
+- **Admin UI** — Livewire Volt pages served from the package when `livewire/volt` is installed
+- **Artisan tooling** — Install, refresh, uninstall, UI checks, and help
 
 ## Requirements
 
 - PHP 8.2+
-- Laravel 12.x / 13.x
-- Vormia 5.x (must be installed first)
+- Laravel 12.x or 13.x
+- [Vormia](https://github.com/vormiaphp/vormia) 5.x (install in your app first)
+
+### Optional (admin UI)
+
+- `livewire/livewire` and `livewire/volt` — required for package-registered admin routes
+- `vormiaphp/ui-livewireflux-admin` — required by `atumulticurrency:ui-install` for layout compatibility checks
+- `livewire/flux` — optional; use `ui-install --inject-sidebar` to merge menu snippets
+
+See `composer.json` `suggest` for the exact package names.
 
 ## Dependencies
 
-### Required Dependencies
+- **vormiaphp/vormia** (required) — Users, taxonomies, and related infrastructure
 
-- **vormiaphp/vormia**: Required for core functionality and database structure
-
-  - Used for user management, taxonomies, and meta data handling
-  - See [Vormia installation guide](https://github.com/vormiaphp/vormia) for installation instructions
-
-ATU Multi-Currency can integrate with A2Commerce if present (e.g. syncing base currency via the `a2_ec_settings` table), but **A2Commerce is not required** to install or use the package.
+**A2Commerce** is optional. If `a2_ec_settings` exists, the seeder and sync services can align the default currency with A2; otherwise defaults apply (for example USD).
 
 ## Installation
 
-Before installing ATU Multi-Currency, ensure you have Laravel and Vormia installed.
-
-### Step 1: Install ATU Multi-Currency
+### 1. Require the package
 
 ```sh
 composer require vormia-folks/atu-multi-currency
 ```
 
-### Step 2: Run ATU Multi-Currency Installation
+The service provider is discovered automatically.
+
+### 2. Run the installer (optional `.env`, migrate, seed)
 
 ```sh
 php artisan atumulticurrency:install
 ```
 
-This will automatically install ATU Multi-Currency with all files and configurations:
+This command:
 
-**Automatically Installed:**
+- Appends missing **ATU Multi-Currency** keys to `.env` and `.env.example` (unless `--skip-env`)
+- Explains that **routes, config, migrations, and Volt views load from vendor**
+- Prompts to run `php artisan migrate` (package migrations are loaded via `loadMigrationsFrom`)
+- Prompts to run the **base currency** seeder
 
-- ✅ All migration files copied to `database/migrations`
-- ✅ Seeder file copied to `database/seeders`
-- ✅ Configuration file copied to `config/atu-multi-currency.php`
-- ✅ Environment variables added to `.env` and `.env.example`
-- ✅ Currency API routes (commented out) added to `routes/api.php`
+**Option:**
 
-**Installation Options:**
+- `--skip-env` — Do not modify `.env` / `.env.example`
 
-- `--api`: Core-only install (skip modifying route files and skip copying UI resources)
-- `--no-overwrite`: Keep existing files instead of replacing them
-- `--skip-env`: Leave `.env` files untouched
-
-**Example:**
+### 3. Migrate and seed (if you skipped prompts)
 
 ```sh
-# Install without overwriting existing files
-php artisan atumulticurrency:install --no-overwrite
-
-# Install core only (API-only usage)
-php artisan atumulticurrency:install --api
-
-# Install without modifying .env files
-php artisan atumulticurrency:install --skip-env
-```
-
-### Step 3: Run Migrations and Seeders
-
-The installation command will prompt you to run migrations and seeders. You can also run them manually:
-
-```sh
-# Run migrations
 php artisan migrate
-
-# Run seeders to create base currency
-php artisan db:seed --class=ATUMultiCurrencySeeder
+php artisan db:seed --class="Vormia\\ATUMultiCurrency\\Database\\Seeders\\ATUMultiCurrencySeeder"
 ```
 
-The seeder will automatically read the base currency from `a2_ec_settings` table and create the default currency with a rate of 1.00000000.
+The seeder creates a default currency with rate `1.0` when none exists. If `a2_ec_settings` is present, it reads rows with `key` of `currency_code` and `currency_symbol`; otherwise it uses USD / `$`.
 
-## Available Commands
+### 4. Optional: publish config
 
-### Install Command
-
-Install the package with all necessary files and configurations:
+Config is merged from the package. To override in your app:
 
 ```sh
-php artisan atumulticurrency:install
+php artisan vendor:publish --tag=atumulticurrency-config
 ```
 
-**Options:**
+### 5. Optional: admin UI checklist
 
-- `--skip-env`: Do not modify .env files
-- `--no-overwrite`: Skip existing files instead of replacing
-
-### Refresh Command
-
-Refresh migrations and seeders, clear caches:
+When Volt is installed, admin routes are registered at **`/admin/atu/currencies`**. To verify optional Flux layout dependencies and optionally inject sidebar links:
 
 ```sh
-php artisan atumulticurrency:refresh
+php artisan atumulticurrency:ui-install
+php artisan atumulticurrency:ui-install --inject-sidebar
 ```
 
-**Options:**
-
-- `--force`: Skip confirmation prompts
-- `--seed`: Force re-seeding
-
-This command will:
-
-- Rollback and re-run migrations for `atu_multicurrency_*` tables
-- Re-run seeders to restore base currency
-- Clear all application caches
-
-### Uninstall Command
-
-Remove all package files and configurations:
+After `composer update` of this package, clear caches:
 
 ```sh
-php artisan atumulticurrency:uninstall
+php artisan atumulticurrency:ui-update
 ```
 
-**Options:**
+## Commands
 
-- `--keep-env`: Preserve environment variables
-- `--force`: Skip confirmation prompts
+| Command | Purpose |
+| --- | --- |
+| `atumulticurrency:install` | Env keys; prompts for migrate/seed (`--skip-env`) |
+| `atumulticurrency:refresh` | Roll back and re-run package migrations; optional seed (`--force`, `--seed`) |
+| `atumulticurrency:uninstall` | Remove env keys; optional migration rollback (`--keep-env`, `--force`) |
+| `atumulticurrency:ui-install` | Check UI deps; optional Flux sidebar (`--inject-sidebar`) |
+| `atumulticurrency:ui-update` | Clear caches after package update |
+| `atumulticurrency:ui-uninstall` | Remove **legacy** copied views and marked route/sidebar snippets (`--force`) |
+| `atumulticurrency:help` | Summary of commands, env, routes, seeder class |
 
-**⚠️ Warning:** This will remove all ATU Multi-Currency files and optionally drop database tables. A backup will be created in `storage/app/atumulticurrency-final-backup-{timestamp}/`.
-
-### Help Command
-
-Display help information and usage examples:
-
-```sh
-php artisan atumulticurrency:help
-```
+Run `php artisan atumulticurrency:help` for the canonical, up-to-date list.
 
 ## Configuration
 
-After installation, you can configure the package in `config/atu-multi-currency.php`:
+Merged config lives in the package at `config/atu-multi-currency.php`. After publishing, edit `config/atu-multi-currency.php` in your application.
 
-```php
-return [
-    'default_currency' => env('A2_CURRENCY', 'USD'),
+Typical keys include `default_currency`, `api`, `conversion`, and `table_prefix`.
 
-    'api' => [
-        'key' => env('ATU_CURRENCY_API_KEY', ''),
-        'update_frequency' => env('ATU_CURRENCY_UPDATE_FREQUENCY', 'daily'),
-    ],
+## Environment variables
 
-    'conversion' => [
-        'apply_fees' => true,
-        'log_conversions' => true,
-        'round_precision' => 2,
-    ],
-
-    'table_prefix' => 'atu_multicurrency_',
-];
-```
-
-## Environment Variables
-
-The following environment variables are added to your `.env` file during installation:
+Installed keys (when not skipped):
 
 ```env
 # ATU Multi-Currency Configuration
@@ -189,322 +133,107 @@ ATU_CURRENCY_UPDATE_FREQUENCY=daily
 ATU_CURRENCY_SETTINGS_SOURCE=database
 ```
 
-- `ATU_CURRENCY_API_KEY`: API key for automatic currency rate updates (optional)
-- `ATU_CURRENCY_UPDATE_FREQUENCY`: How often to update currency rates (daily, weekly, etc.)
-- `ATU_CURRENCY_SETTINGS_SOURCE`: Settings storage source - `database` (recommended) or `file` (config file). Set to `database` to enable database settings management.
+- **`ATU_CURRENCY_API_KEY`** — External rates API (optional)
+- **`ATU_CURRENCY_UPDATE_FREQUENCY`** — How often you refresh rates (your own scheduler logic)
+- **`ATU_CURRENCY_SETTINGS_SOURCE`** — `database` (recommended) or `file`
 
-## Database Tables
+## Database tables
 
-The package creates three database tables with the `atu_multicurrency_` prefix:
+All use the `atu_multicurrency_` prefix (configurable via `table_prefix`):
 
-### `atu_multicurrency_currencies`
+| Table | Role |
+| --- | --- |
+| `atu_multicurrency_currencies` | Supported currencies, rates, fees, default/active flags |
+| `atu_multicurrency_currency_rates_log` | Historical rates |
+| `atu_multicurrency_currency_conversion_log` | Immutable conversion audit |
+| `atu_multicurrency_settings` | Stored conversion and display settings |
 
-Holds supported currencies and conversion rules:
+## Core principles
 
-- Currency code (ISO 4217, 3-4 characters: USD, EUR, ZAR)
-- Currency symbol (e.g., $, €, R)
-- Currency name (optional full descriptive name, e.g., "South African Rand")
-- Exchange rate
-- Fee configuration
-- Default currency flag
-- Active status
+1. **A2 Commerce owns truth** for stored order/catalog amounts in base currency (when A2 is used).
+2. **ATU is a projection layer** — convert, log, and report without silently rewriting core rows.
+3. **Complexity stays in ATU tables** — rates, logs, fees, settings.
+4. **Logs are append-only** — do not mutate historical conversion rows.
 
-**Note:** Currency code and symbol support automatic fallback - if one is empty, it will use the other automatically.
+## Default currency and A2Commerce
 
-### `atu_multicurrency_currency_rates_log`
+When A2Commerce is present, **CurrencySyncService** keeps the default currency’s code/symbol aligned with `a2_ec_settings` using `updateOrInsert` on the `key` / `value` shape used by your A2 install.
 
-Tracks historical exchange rates:
+**Operational rules** (see admin UI and services for enforcement):
 
-- Currency reference
-- Rate value
-- Source (manual or API)
-- Timestamp
+- Default currency rate stays **1.0**
+- Only one default currency
+- Changing default is a deliberate flow (set another currency default first, where applicable)
 
-### `atu_multicurrency_currency_conversion_log`
+## JSON API
 
-Immutable audit trail of all conversions:
+Routes are registered by the package with the `api` middleware stack, prefix **`/api/atu/currency`**, and names like `api.atu.currency.index`.
 
-- Entity type and ID
-- Conversion context
-- Base and target currencies
-- Amounts and rates used
-- Fees applied
-- User and timestamp
+Endpoints include listing currencies, current/default, switch, CRUD, toggle active, set default, settings read/update, and conversion logs. Secure them with your own middleware (Sanctum, admin gates, throttling) as needed.
 
-## Core Principles
+## Admin UI (Volt)
 
-1. **A2 Commerce owns truth** - Prices in A2Commerce tables are always in base currency
-2. **ATU is a projection layer** - Converts, decorates, logs, and reports without mutating core data
-3. **All complexity lives inside ATU** - Conversion history, rates, fees, and reporting
-4. **Logs are immutable** - Never update conversion logs, always insert new rows
+If **`livewire/volt`** is installed, the service provider mounts Volt views from the package and loads **`/admin/atu/currencies`** routes (names such as `admin.atu.currencies.index`).
 
-## Usage
-
-### Seeding Base Currency
-
-The package automatically seeds the base currency from A2Commerce settings during installation. The seeder reads:
-
-- `currency_code` from `a2_ec_settings` → `atu_multicurrency_currencies.code`
-- `currency_symbol` from `a2_ec_settings` → `atu_multicurrency_currencies.symbol`
-
-If `a2_ec_settings` doesn't exist, it defaults to USD/$.
-
-### Default Currency Synchronization
-
-The package automatically synchronizes the default currency with the `a2_ec_settings` table:
-
-- When you update the default currency's code or symbol in the admin panel, it automatically updates `a2_ec_settings.currency_code` and `a2_ec_settings.currency_symbol`
-- The default currency code must always match `a2_ec_settings.currency_code`
-- The default currency rate is always locked at 1.0 and cannot be changed
-- Only one currency can be set as default at any time
-
-**Important:** The default currency cannot be deleted or deactivated. To change the default currency, you must first set another currency as default, then update the previous default currency.
-
-### Adding Additional Currencies
-
-You can add additional currencies by inserting records into the `atu_multicurrency_currencies` table:
-
-```php
-DB::table('atu_multicurrency_currencies')->insert([
-    'code' => 'ZAR',  // 3-4 character currency code (ISO 4217)
-    'symbol' => 'R',  // Currency symbol
-    'name' => 'South African Rand',  // Optional full descriptive name
-    'rate' => '130.50000000',
-    'is_auto' => true,
-    'fee' => null,
-    'is_default' => false,
-    'is_active' => true,
-    'created_at' => now(),
-    'updated_at' => now(),
-]);
-```
-
-**Currency Code and Symbol:**
-
-- Currency codes support 3-4 characters (e.g., USD, EUR, ZAR)
-- If currency code is empty, the symbol will be used as the code automatically
-- If currency symbol is empty, the code will be used as the symbol automatically
-- At least one of code or symbol must be provided
-
-**Currency Name:**
-
-- Optional field for full descriptive names
-- Useful for display purposes and better user experience
-- Examples: "United States Dollar", "South African Rand", "Kenyan Shilling"
-
-## UI Installation
-
-After installing the base package, you can install the UI components (admin views, web routes, sidebar injection):
-
-```sh
-php artisan atumulticurrency:ui-install
-```
-
-This will automatically:
-
-- Copy UI view files to `resources/views/livewire/admin/atu/`
-- Attempt to inject routes into `routes/web.php`
-- Attempt to inject sidebar menu items into `resources/views/components/layouts/app/sidebar.blade.php`
-- Clear application caches
-
-### Manual Route Setup
-
-If automatic route injection fails, manually add the following routes to `routes/web.php` inside the `Route::middleware(['auth'])->group(function () { ... })` block:
-
-```php
-use Livewire\Volt\Volt;
-
-Route::prefix('admin/atu/currencies')->name('admin.atu.currencies.')->group(function () {
-    // Currencies
-    Volt::route('/', 'admin.atu.currencies.index')->name('index');
-    Volt::route('create', 'admin.atu.currencies.create')->name('create');
-    Volt::route('edit/{id}', 'admin.atu.currencies.edit')->name('edit');
-    Volt::route('settings', 'admin.atu.currencies.settings')->name('settings');
-    Volt::route('logs', 'admin.atu.currencies.logs')->name('logs');
-});
-```
-
-**Note:** If you have configured your own starterkit, make sure to add `use Livewire\Volt\Volt;` at the top of your `routes/web.php` file.
-
-### Manual Sidebar Menu Setup
-
-If automatic sidebar menu injection fails, manually add the following menu items to `resources/views/components/layouts/app/sidebar.blade.php` after the Platform group closing tag (`</flux:navlist.group>`):
-
-```blade
-@if (auth()->user()?->isAdminOrSuperAdmin())
-    <hr />
-
-    {{-- Currencies Menu Item --}}
-    <flux:navlist.item icon="currency-dollar" :href="route('admin.atu.currencies.index')"
-        :current="request()->routeIs('admin.atu.currencies.index') || request()->routeIs('admin.atu.currencies.create') || request()->routeIs('admin.atu.currencies.edit')" wire:navigate>
-        {{ __('Currencies') }}
-    </flux:navlist.item>
-
-    {{-- Currency Logs Menu Item --}}
-    <flux:navlist.item icon="document-text" :href="route('admin.atu.currencies.logs')"
-        :current="request()->routeIs('admin.atu.currencies.logs')" wire:navigate>
-        {{ __('Currency Logs') }}
-    </flux:navlist.item>
-
-    {{-- Currency Settings Menu Item --}}
-    <flux:navlist.item icon="cog-6-tooth" :href="route('admin.atu.currencies.settings')"
-        :current="request()->routeIs('admin.atu.currencies.settings')" wire:navigate>
-        {{ __('Currency Settings') }}
-    </flux:navlist.item>
-@endif
-```
-
-**Reference Files:**
-
-- Routes: `vendor/vormiaphp/atu-multicurrency/src/stubs/reference/routes-to-add.php`
-- Sidebar Menu: `vendor/vormiaphp/atu-multicurrency/src/stubs/reference/sidebar-menu-to-add.blade.php`
-
-## API Routes (Optional)
-
-During installation, ATU Multi-Currency appends a **commented** API route group to your `routes/api.php`.
-
-To enable the APIs, uncomment the block between:
-
-- `// >>> ATU Multi-Currency Routes START`
-- `// >>> ATU Multi-Currency Routes END`
-
-The enabled endpoints live under the `/atu/currency` prefix and include:
-
-- `GET /atu/currency` (list active currencies)
-- `GET /atu/currency/current` (current + default currency)
-- `POST /atu/currency/switch` (switch current currency by code)
-- `POST /atu/currency` / `PUT /atu/currency/{id}` / `DELETE /atu/currency/{id}` (CRUD)
-- `PATCH /atu/currency/{id}/toggle-active` (activate/deactivate)
-- `PATCH /atu/currency/{id}/set-default` (switch default currency)
-- `GET /atu/currency/settings` / `PUT /atu/currency/settings` (conversion settings)
-- `GET /atu/currency/logs/conversions` (conversion logs)
-
-All API controllers return JSON via `App\Traits\Vrm\Model\ApiResponseTrait`.
+If Volt is not installed, use the reference stubs under `vendor/vormia-folks/atu-multi-currency/src/stubs/reference/` for manual integration.
 
 ## Documentation
 
-For detailed implementation guides and architecture documentation, see:
+| Document | Description |
+| --- | --- |
+| [`docs/build-guide.md`](docs/build-guide.md) | Install model, env, migrations, API |
+| [`docs/build-ui-guide.md`](docs/build-ui-guide.md) | UI commands, Flux sidebar, UI contract |
+| [`docs/package-creation-guide.md`](docs/package-creation-guide.md) | Template for ATU-style Laravel packages |
+| [`docs/releases/v2.1.0.md`](docs/releases/v2.1.0.md) | Release notes for v2.1.0 |
 
-- **Build Guide**: `docs/build-guide.md` - Authoritative implementation guide
-- **UI Build Guide**: `docs/build-ui-guide.md` - UI install/update/uninstall + admin pages guide
-- **A2Commerce Documentation**: See [A2Commerce GitHub repository](https://github.com/a2-atu/a2commerce) for installation and usage documentation
+[A2Commerce](https://github.com/a2-atu/a2commerce) documents the commerce core this package extends.
 
 ## Uninstallation
 
-To completely remove the package:
-
 ```sh
-# Uninstall package files and optionally drop tables
 php artisan atumulticurrency:uninstall
-
-# Remove from composer
 composer remove vormia-folks/atu-multi-currency
 ```
 
-**Note:** The uninstall command will:
+The uninstall command can strip ATU env keys and optionally roll back this package’s migrations. It does not remove the Composer package; `composer remove` does that. Routes and Volt UI unregister once the package is removed.
 
-- Remove all copied files and stubs
-- Remove routes from `routes/api.php`
-- Optionally drop database tables (with confirmation)
-- Optionally remove environment variables
-- Create a backup before removal
+Use `atumulticurrency:ui-uninstall` first if you still have **legacy copied** Blade/Volt files from older installs.
 
 ## Troubleshooting
 
-### Seeder Fails
-
-If the seeder fails because `a2_ec_settings` table doesn't exist:
-
-- Ensure A2Commerce is installed and migrations have been run
-- The seeder will fallback to USD/$ if the table is missing
-
-### Migration Errors
-
-If migrations fail:
-
-- Ensure all A2Commerce migrations have been run first
-- Check that the database connection is configured correctly
-- Verify foreign key constraints are supported
-
-### Currency Not Found
-
-If base currency is not found:
-
-- Run the seeder manually: `php artisan db:seed --class=ATUMultiCurrencySeeder`
-- Check that `a2_ec_settings` table exists and has currency data
+- **Migrations not applied** — Run `php artisan migrate`. Package migrations are registered automatically.
+- **Seeder skipped** — A default row already exists, or run the seeder class shown in `atumulticurrency:help`.
+- **No admin pages** — Install `livewire/volt` (and Livewire); run `atumulticurrency:ui-install` to verify suggested packages.
+- **`a2_ec_settings` missing** — Expected without A2Commerce; seeder falls back to USD.
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions are welcome via pull request.
 
 ## License
 
-This package is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+MIT. See [opensource.org/licenses/MIT](https://opensource.org/licenses/MIT).
 
-## Support
+## Versioning
 
-For issues, questions, or contributions:
-
-- Check the documentation in `docs/build-guide.md`
-- Review [A2Commerce documentation](https://github.com/a2-atu/a2commerce) for base functionality
-- Open an issue on the package repository
-
-## Versioning and Git Tags
-
-This package follows [Semantic Versioning](https://semver.org/) and uses git tags to mark releases. Each release is tagged with a version number (e.g., `v1.0.0`, `v1.0.1`).
-
-### Available Versions
-
-The following versions are available:
-
-- **v1.0.2** - Latest stable release
-- **v1.0.1** - Previous release
-- **v1.0.0** - Stable release with full feature set
-- **v0.2.1** - Previous release
-- **v0.2.0** - Previous release
-- **v0.1.0** - Initial release
-
-### Installing Specific Versions
-
-You can install a specific version using Composer:
+[Semantic Versioning](https://semver.org/); releases are tagged (for example `v2.1.0`).
 
 ```sh
-# Install latest stable version
-composer require vormia-folks/atu-multi-currency
-
-# Install specific version
-composer require vormia-folks/atu-multi-currency:^1.0.1
-
-# Install from git tag (development)
-composer require vormia-folks/atu-multi-currency:dev-main
+composer require vormia-folks/atu-multi-currency:^2.1
 ```
 
-### Checking Out a Specific Git Tag
-
-If you're working with the source code directly:
-
 ```sh
-# List all available tags
 git tag --list
-
-# Checkout a specific version
-git checkout v1.0.1
-
-# Or checkout the latest tag
-git checkout $(git describe --tags --abbrev=0)
+git show v2.1.0 --no-patch
 ```
 
-## Release Notes
-This package uses git tags for releases. To see what changed between versions, compare tags or view your repository’s release notes (GitHub Releases / changelog, depending on where you publish).
+### Recent releases
 
-```sh
-# View release information for a specific tag
-git show v1.0.1 --no-patch
+- **v2.1.0** — See [`docs/releases/v2.1.0.md`](docs/releases/v2.1.0.md)
+- **v2.0.0** — Vendor-loaded migrations, routes, and Volt UI model
 
-# View all commits for a specific version
-git log v1.0.0..v1.0.1 --oneline
-```
+Older tags (`v1.x`, `v0.x`) may reflect the previous “copy stubs into the app” workflow; prefer **v2.x** docs for current behavior.
 
 ---
 
-**Built with ❤️ for the A2 Commerce ecosystem**
+Built for the A2 Commerce ecosystem.

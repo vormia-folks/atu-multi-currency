@@ -2,6 +2,8 @@
 
 This guide walks you through creating a Laravel package following the ATU package style and conventions. Use this guide as a template when creating new packages.
 
+**Note:** *ATU Multi-Currency v2.x* loads migrations, API routes, merged config, and Volt UI from the package (`loadMigrationsFrom`, `loadRoutesFrom`, Volt mount) and uses a minimal installer that only touches `.env`. Older sections below that describe copying large stub trees into the host app still apply to many internal packages, but the live ATU Multi-Currency repo follows the leaner v2 model—see `docs/build-guide.md` for the current behavior.
+
 ## Table of Contents
 
 1. [Package Structure](#package-structure)

@@ -6,7 +6,7 @@ use Composer\InstalledVersions;
 
 class ATUMultiCurrency
 {
-    public const VERSION = '0.1.0';
+    public const VERSION = '2.1.0';
 
     /**
      * Absolute path to the package root (directory containing composer.json).
