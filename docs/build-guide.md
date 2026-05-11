@@ -96,6 +96,7 @@ composer remove vormia-folks/atu-multi-currency
 
 ### Further reading
 
+- **Changelog** — `CHANGELOG.md` (root)
 - **UI commands and Flux sidebar** — `docs/build-ui-guide.md`
 - **Release notes** — `docs/releases/v2.1.0.md` (current minor)
 - **Package authoring template** — `docs/package-creation-guide.md`

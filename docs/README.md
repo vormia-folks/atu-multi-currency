@@ -1,12 +1,15 @@
 ## ATU Multi-Currency documentation
 
+- **[Changelog](../CHANGELOG.md)** — version history and upgrade-oriented deltas  
+- **[v2.1.0 release notes](releases/v2.1.0.md)** — narrative for the current minor release  
+
 | Guide | Contents |
 | --- | --- |
 | [build-guide.md](build-guide.md) | Vendor-loaded migrations, install/uninstall, env, API, refresh |
 | [build-ui-guide.md](build-ui-guide.md) | `ui-install` / `ui-update` / `ui-uninstall`, Flux sidebar, full UI contract |
 | [package-creation-guide.md](package-creation-guide.md) | How to scaffold ATU-style Laravel packages (template; v2 ATU uses less file-copying than older examples) |
 
-### Release notes
+### Release notes (detail)
 
 - [v2.1.0](releases/v2.1.0.md)
 

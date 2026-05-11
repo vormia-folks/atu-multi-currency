@@ -181,6 +181,7 @@ If Volt is not installed, use the reference stubs under `vendor/vormia-folks/atu
 
 | Document | Description |
 | --- | --- |
+| [`CHANGELOG.md`](CHANGELOG.md) | Version history (Keep a Changelog) |
 | [`docs/build-guide.md`](docs/build-guide.md) | Install model, env, migrations, API |
 | [`docs/build-ui-guide.md`](docs/build-ui-guide.md) | UI commands, Flux sidebar, UI contract |
 | [`docs/package-creation-guide.md`](docs/package-creation-guide.md) | Template for ATU-style Laravel packages |
@@ -229,8 +230,8 @@ git show v2.1.0 --no-patch
 
 ### Recent releases
 
-- **v2.1.0** — See [`docs/releases/v2.1.0.md`](docs/releases/v2.1.0.md)
-- **v2.0.0** — Vendor-loaded migrations, routes, and Volt UI model
+- **v2.1.0** — [`CHANGELOG.md`](CHANGELOG.md) · [`docs/releases/v2.1.0.md`](docs/releases/v2.1.0.md)
+- **v2.0.0** — See [`CHANGELOG.md`](CHANGELOG.md) (section **[2.0.0]**)
 
 Older tags (`v1.x`, `v0.x`) may reflect the previous “copy stubs into the app” workflow; prefer **v2.x** docs for current behavior.
 
