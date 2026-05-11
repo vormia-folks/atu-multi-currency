@@ -1,15 +1,12 @@
 <?php
 
-namespace App\Http\Controllers\Api\Atu\Multicurrency;
+namespace Vormia\ATUMultiCurrency\Http\Controllers\Api\Atu\Multicurrency;
 
-use App\Traits\Vrm\Model\ApiResponseTrait;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controller;
 
 abstract class ApiController extends Controller
 {
-    use ApiResponseTrait;
-
     protected function success($data = null, string $message = '', int $statusCode = 200): JsonResponse
     {
         $response = [
@@ -17,7 +14,7 @@ abstract class ApiController extends Controller
             'message' => $message,
         ];
 
-        if (!is_null($data)) {
+        if (! is_null($data)) {
             $response['data'] = $data;
         }
 
@@ -59,11 +56,11 @@ abstract class ApiController extends Controller
             'message' => $message,
         ];
 
-        if (!empty($errors)) {
+        if (! empty($errors)) {
             $response['errors'] = $errors;
         }
 
-        if (!is_null($data)) {
+        if (! is_null($data)) {
             $response['data'] = $data;
         }
 
@@ -99,4 +96,3 @@ abstract class ApiController extends Controller
         return $this->error($message, 403);
     }
 }
-

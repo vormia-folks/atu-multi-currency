@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api\Atu\Multicurrency;
+namespace Vormia\ATUMultiCurrency\Http\Controllers\Api\Atu\Multicurrency;
 
 use Illuminate\Http\Request;
 use Vormia\ATUMultiCurrency\Models\CurrencyConversionLog;
@@ -55,4 +55,3 @@ class CurrencyLogsController extends ApiController
         }
     }
 }
-

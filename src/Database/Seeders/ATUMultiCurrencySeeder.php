@@ -1,6 +1,6 @@
 <?php
 
-namespace Database\Seeders;
+namespace Vormia\ATUMultiCurrency\Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
@@ -14,7 +14,6 @@ class ATUMultiCurrencySeeder extends Seeder
      */
     public function run(): void
     {
-        // Check if default currency already exists
         $existingDefault = Currency::where('is_default', true)->first();
 
         if ($existingDefault) {
@@ -23,13 +22,11 @@ class ATUMultiCurrencySeeder extends Seeder
             return;
         }
 
-        // Try to read base currency from a2_ec_settings
         $currencyCode = 'USD';
         $currencySymbol = '$';
 
         try {
             if (DB::getSchemaBuilder()->hasTable('a2_ec_settings')) {
-                // Get currency_code and currency_symbol from key-value settings table
                 $a2CurrencyCode = DB::table('a2_ec_settings')
                     ->where('key', 'currency_code')
                     ->value('value');
@@ -55,7 +52,6 @@ class ATUMultiCurrencySeeder extends Seeder
             ]);
         }
 
-        // Create default currency
         Currency::create([
             'code' => strtoupper($currencyCode),
             'symbol' => $currencySymbol,

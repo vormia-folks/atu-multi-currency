@@ -1,3 +1,4 @@
+{{-- >>> ATU Multi-Currency Sidebar START --}}
 @if (auth()->user()?->isAdminOrSuperAdmin())
 	<hr />
 
@@ -19,3 +20,4 @@
 		{{ __('Currency Settings') }}
 	</flux:navlist.item>
 @endif
+{{-- >>> ATU Multi-Currency Sidebar END --}}

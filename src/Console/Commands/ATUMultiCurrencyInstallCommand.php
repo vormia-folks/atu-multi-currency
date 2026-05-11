@@ -6,54 +6,31 @@ use Vormia\ATUMultiCurrency\ATUMultiCurrency;
 use Vormia\ATUMultiCurrency\Support\Installer;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\File;
 
 class ATUMultiCurrencyInstallCommand extends Command
 {
-    protected $signature = 'atumulticurrency:install
-                            {--api : Install core only (skip routes and UI resources)}
-                            {--skip-env : Do not modify .env files}
-                            {--no-overwrite : Skip existing files instead of replacing}';
+    protected $signature = 'atumulticurrency:install {--skip-env : Do not modify .env files}';
 
-    protected $description = 'Install ATU Multi-Currency package with all necessary files and configurations';
+    protected $description = 'Install ATU Multi-Currency: optional .env keys, then migrate/seed (code loads from the package)';
 
     public function handle(Installer $installer): int
     {
         $this->displayHeader();
 
-        $overwrite = !$this->option('no-overwrite');
-        $touchEnv = !$this->option('skip-env');
-        $apiOnly = (bool) $this->option('api');
+        $touchEnv = ! $this->option('skip-env');
 
-        // Use Installer's install method to ensure files are tracked correctly for uninstall.
-        $this->step('Copying ATU Multi-Currency files and stubs...');
-        // Use positional args for best IDE/linter compatibility.
-        $results = $installer->install($overwrite, false, !$apiOnly, !$apiOnly);
+        $this->step('Registering package (no stub files are copied; routes, config, migrations, and Volt views load from vendor).');
+        $results = $installer->install($touchEnv);
 
-        // Show detailed output grouped by directory
-        $this->displayCopyResults($results['copied']);
-
-        // Step 2: Environment variables
         $this->step('Updating environment files...');
         if ($touchEnv) {
-            $this->updateEnvFiles();
+            $this->reportEnvResults($results['env'] ?? []);
         } else {
-            $this->line('   ⏭️  Environment keys skipped (--skip-env flag used).');
+            $this->line('   Skipped (--skip-env).');
         }
 
-        // Step 3: Routes
-        if ($apiOnly) {
-            $this->step('Skipping routes modification (--api flag used)...');
-            $this->line('   ⏭️  No route files were modified.');
-        } else {
-            $this->step('Ensuring API routes...');
-            $this->handleRoutes($results['routes'] ?? []);
-        }
-
-        // Step 4: Migrations
         $migrationsRun = $this->handleMigrations();
 
-        // Step 5: Seeders
         if ($migrationsRun) {
             $this->handleSeeders();
         }
@@ -63,262 +40,140 @@ class ATUMultiCurrencyInstallCommand extends Command
         return self::SUCCESS;
     }
 
-    /**
-     * Display copy results grouped by directory
-     */
-    private function displayCopyResults(array $copyResults): void
+    private function reportEnvResults(array $envResults): void
     {
-        $copied = $copyResults['copied'] ?? [];
-        $skipped = $copyResults['skipped'] ?? [];
-
-        if (empty($copied) && empty($skipped)) {
-            $this->line('   ℹ️  No files to copy');
-            return;
-        }
-
-        // Group files by directory for better output
-        $byDirectory = [];
-        foreach ($copied as $file) {
-            $dir = dirname($file);
-            if (!isset($byDirectory[$dir])) {
-                $byDirectory[$dir] = [];
+        $touched = false;
+        foreach ($envResults as $file => $keys) {
+            if ($keys !== []) {
+                $this->info('   Added to ' . basename($file) . ': ' . implode(', ', $keys));
+                $touched = true;
             }
-            $byDirectory[$dir][] = basename($file);
         }
-
-        foreach ($byDirectory as $dir => $files) {
-            $relativeDir = $this->getRelativePath($dir);
-            $this->info("   ✅ Copied " . count($files) . " file(s) to {$relativeDir}/");
-        }
-
-        if (!empty($skipped)) {
-            $this->warn("   ⚠️  " . count($skipped) . " existing file(s) skipped (use --no-overwrite to keep existing files)");
+        if (! $touched) {
+            $this->info('   ATU Multi-Currency env keys already present (or env files missing).');
         }
     }
 
-    /**
-     * Get relative path from base path for display
-     */
-    private function getRelativePath(string $absolutePath): string
-    {
-        $basePath = base_path();
-        if (str_starts_with($absolutePath, $basePath)) {
-            return ltrim(str_replace($basePath, '', $absolutePath), '/\\');
-        }
-        return $absolutePath;
-    }
-
-    /**
-     * Update .env and .env.example files with ATU configuration
-     */
-    private function updateEnvFiles(): void
-    {
-        $envPath = base_path('.env');
-        $envExamplePath = base_path('.env.example');
-
-        $envBlock = "\n# ATU Multi-Currency Configuration\n"
-            . "ATU_CURRENCY_API_KEY=\n"
-            . "ATU_CURRENCY_UPDATE_FREQUENCY=daily\n"
-            . "ATU_CURRENCY_SETTINGS_SOURCE=database\n";
-
-        // Update .env
-        if (File::exists($envPath)) {
-            $content = File::get($envPath);
-            // Check if any of the ATU Multi-Currency keys are missing
-            $keysToCheck = ['ATU_CURRENCY_API_KEY', 'ATU_CURRENCY_UPDATE_FREQUENCY', 'ATU_CURRENCY_SETTINGS_SOURCE'];
-            $hasAllKeys = true;
-            foreach ($keysToCheck as $key) {
-                if (strpos($content, $key) === false) {
-                    $hasAllKeys = false;
-                    break;
-                }
-            }
-            if (!$hasAllKeys) {
-                File::append($envPath, $envBlock);
-            }
-        }
-
-        // Update .env.example
-        if (File::exists($envExamplePath)) {
-            $content = File::get($envExamplePath);
-            // Check if any of the ATU Multi-Currency keys are missing
-            $keysToCheck = ['ATU_CURRENCY_API_KEY', 'ATU_CURRENCY_UPDATE_FREQUENCY', 'ATU_CURRENCY_SETTINGS_SOURCE'];
-            $hasAllKeys = true;
-            foreach ($keysToCheck as $key) {
-                if (strpos($content, $key) === false) {
-                    $hasAllKeys = false;
-                    break;
-                }
-            }
-            if (!$hasAllKeys) {
-                File::append($envExamplePath, $envBlock);
-            }
-        }
-
-        $this->info('   ✅ Environment files updated successfully (ATU Multi-Currency configuration).');
-    }
-
-    /**
-     * Handle routes results
-     */
-    private function handleRoutes(array $routes): void
-    {
-        if ($routes === []) {
-            return;
-        }
-
-        if ($routes['skipped'] ?? false) {
-            $this->warn('   ⚠️  routes/api.php not found. Currency routes were not added.');
-            $this->line('   Create routes/api.php first, then re-run the installer to add the routes.');
-            return;
-        }
-
-        if ($routes['added'] ?? false) {
-            $this->info('   ✅ Currency routes added to routes/api.php');
-        } else {
-            $this->info('   ✅ Currency routes already exist in routes/api.php');
-        }
-    }
-
-    /**
-     * Display the header
-     */
     private function displayHeader(): void
     {
         $this->newLine();
-        $this->info('🚀 Installing ATU Multi-Currency Package...');
+        $this->info('Installing ATU Multi-Currency Package...');
         $this->line('   Version: ' . ATUMultiCurrency::VERSION);
         $this->newLine();
     }
 
-    /**
-     * Display a step message
-     */
     private function step(string $message): void
     {
-        $this->info("📦 {$message}");
+        $this->info($message);
     }
 
-    /**
-     * Handle migrations prompt and execution
-     */
     private function handleMigrations(): bool
     {
         $this->step('Running database migrations...');
+        $this->line('   ATU Multi-Currency migrations load from the package (vendor); `php artisan migrate` records them like any other migration.');
 
-        if (!$this->confirm('Would you like to run migrations now?', true)) {
-            $this->line('   ⏭️  Migrations skipped. You can run them later with: php artisan migrate');
+        if (! $this->confirm('Would you like to run migrations now?', true)) {
+            $this->line('   Migrations skipped. Run later with: php artisan migrate');
+
             return false;
         }
 
         return $this->runMigrations();
     }
 
-    /**
-     * Run database migrations
-     */
     private function runMigrations(): bool
     {
         try {
             $this->line('   Running migrations...');
             $exitCode = Artisan::call('migrate', [], $this->getOutput());
-
-            // Display any output from the migrate command
             $output = Artisan::output();
-            if (!empty(trim($output))) {
+            if (! empty(trim($output))) {
                 $this->line($output);
             }
 
             if ($exitCode === 0) {
-                $this->info('   ✅ Migrations completed successfully!');
+                $this->info('   Migrations completed successfully.');
+
                 return true;
-            } else {
-                $this->error('   ❌ Migrations completed with errors (exit code: ' . $exitCode . ')');
-                $this->warn('   ⚠️  You can run migrations manually later with: php artisan migrate');
-                return false;
             }
+
+            $this->error('   Migrations completed with errors (exit code: ' . $exitCode . ')');
+            $this->warn('   You can run migrations manually later with: php artisan migrate');
+
+            return false;
         } catch (\Exception $e) {
-            $this->error('   ❌ Migration failed: ' . $e->getMessage());
-            $this->warn('   ⚠️  You can run migrations manually later with: php artisan migrate');
+            $this->error('   Migration failed: ' . $e->getMessage());
+            $this->warn('   You can run migrations manually later with: php artisan migrate');
+
             return false;
         }
     }
 
-    /**
-     * Handle seeders execution
-     */
     private function handleSeeders(): void
     {
         $this->step('Running database seeders...');
 
-        if (!$this->confirm('Would you like to seed the base currency now?', true)) {
-            $this->line('   ⏭️  Seeders skipped. You can run them later with: php artisan db:seed --class=ATUMultiCurrencySeeder');
+        if (! $this->confirm('Would you like to seed the base currency now?', true)) {
+            $this->line('   Seeders skipped. Run later with: php artisan db:seed --class=' . \Vormia\ATUMultiCurrency\Database\Seeders\ATUMultiCurrencySeeder::class);
+
             return;
         }
 
         $this->runSeeders();
     }
 
-    /**
-     * Run database seeders
-     */
     private function runSeeders(): void
     {
         try {
             $this->line('   Running seeders...');
             $exitCode = Artisan::call('db:seed', [
-                '--class' => 'ATUMultiCurrencySeeder'
+                '--class' => \Vormia\ATUMultiCurrency\Database\Seeders\ATUMultiCurrencySeeder::class,
             ], $this->getOutput());
 
-            // Display any output from the seeder command
             $output = Artisan::output();
-            if (!empty(trim($output))) {
+            if (! empty(trim($output))) {
                 $this->line($output);
             }
 
             if ($exitCode === 0) {
-                $this->info('   ✅ Seeders completed successfully!');
+                $this->info('   Seeders completed successfully.');
             } else {
-                $this->error('   ❌ Seeders completed with errors (exit code: ' . $exitCode . ')');
-                $this->warn('   ⚠️  You can run seeders manually later with: php artisan db:seed --class=ATUMultiCurrencySeeder');
+                $this->error('   Seeders completed with errors (exit code: ' . $exitCode . ')');
+                $this->warn('   Run manually: php artisan db:seed --class=' . \Vormia\ATUMultiCurrency\Database\Seeders\ATUMultiCurrencySeeder::class);
             }
         } catch (\Exception $e) {
-            $this->error('   ❌ Seeder failed: ' . $e->getMessage());
-            $this->warn('   ⚠️  You can run seeders manually later with: php artisan db:seed --class=ATUMultiCurrencySeeder');
+            $this->error('   Seeder failed: ' . $e->getMessage());
+            $this->warn('   Run manually: php artisan db:seed --class=' . \Vormia\ATUMultiCurrency\Database\Seeders\ATUMultiCurrencySeeder::class);
         }
     }
 
-    /**
-     * Display completion message with next steps
-     */
     private function displayCompletionMessage(bool $envTouched, bool $migrationsRun): void
     {
         $this->newLine();
-        $this->info('🎉 ATU Multi-Currency package installed successfully!');
+        $this->info('ATU Multi-Currency is ready.');
         $this->newLine();
 
-        $this->comment('📋 Next steps:');
-        $this->line('   1. Review and configure your .env file with currency API settings (if needed)');
-
-        if (!$migrationsRun) {
-            $this->line('   2. Run migrations: php artisan migrate');
-            $this->line('   3. Run seeders: php artisan db:seed --class=ATUMultiCurrencySeeder');
-            $this->line('   4. Review the implementation guide: multi-currency-guide.md');
-        } else {
-            $this->line('   2. Review the implementation guide: multi-currency-guide.md');
+        $this->comment('Next steps:');
+        $this->line('   1. Configure .env for currency API if you use automatic rates.');
+        if (! $migrationsRun) {
+            $this->line('   2. Run: php artisan migrate');
+            $this->line('   3. Optional seed: php artisan db:seed --class=' . \Vormia\ATUMultiCurrency\Database\Seeders\ATUMultiCurrencySeeder::class);
         }
-
+        $this->line('   API routes are registered by the package under /api/atu/currency');
+        if (class_exists(\Livewire\Volt\Volt::class)) {
+            $this->line('   Admin Volt UI is registered at /admin/atu/currencies (when Volt is installed).');
+        } else {
+            $this->line('   Install livewire/volt for the admin UI, or merge stubs from src/stubs/reference/.');
+        }
         $this->newLine();
 
-        if (!$envTouched) {
-            $this->warn('⚠️  Note: Environment keys were not modified (--skip-env flag used).');
-            $this->line('   Run: php artisan atumulticurrency:help to see required env keys.');
+        if (! $envTouched) {
+            $this->warn('Note: Environment keys were not modified (--skip-env).');
+            $this->line('   Run: php artisan atumulticurrency:help for required env keys.');
             $this->newLine();
         }
 
-        $this->comment('📖 For help and available commands, run: php artisan atumulticurrency:help');
+        $this->comment('Help: php artisan atumulticurrency:help');
         $this->newLine();
-
-        $this->info('✨ Happy coding with ATU Multi-Currency!');
     }
 }

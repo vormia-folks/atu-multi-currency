@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api\Atu\Multicurrency;
+namespace Vormia\ATUMultiCurrency\Http\Controllers\Api\Atu\Multicurrency;
 
 use Illuminate\Http\Request;
 use Vormia\ATUMultiCurrency\Models\Currency;
@@ -20,7 +20,7 @@ class CurrencySettingsController extends ApiController
                 'round_precision' => 2,
             ]);
 
-            if (!is_array($conversionSettings)) {
+            if (! is_array($conversionSettings)) {
                 $conversionSettings = [
                     'apply_fees' => config('atu-multi-currency.conversion.apply_fees', true),
                     'log_conversions' => config('atu-multi-currency.conversion.log_conversions', true),
@@ -53,7 +53,7 @@ class CurrencySettingsController extends ApiController
 
             $settingsManager = app(SettingsManager::class);
 
-            if (!$settingsManager->isDatabaseSource()) {
+            if (! $settingsManager->isDatabaseSource()) {
                 return $this->error(
                     'Settings are currently managed from config file. Set ATU_CURRENCY_SETTINGS_SOURCE=database in .env to enable database settings.',
                     422
@@ -82,4 +82,3 @@ class CurrencySettingsController extends ApiController
         }
     }
 }
-

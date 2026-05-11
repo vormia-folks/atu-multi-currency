@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Api\Atu\Multicurrency;
+namespace Vormia\ATUMultiCurrency\Http\Controllers\Api\Atu\Multicurrency;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -62,7 +62,7 @@ class CurrencyController extends ApiController
                 $current = Currency::where('code', strtoupper($selectedCode))->where('is_active', true)->first();
             }
 
-            if (!$current && $default) {
+            if (! $current && $default) {
                 $current = $default;
             }
 
@@ -89,7 +89,7 @@ class CurrencyController extends ApiController
             $code = strtoupper(trim((string) $validated['code']));
             $currency = Currency::where('code', $code)->where('is_active', true)->first();
 
-            if (!$currency) {
+            if (! $currency) {
                 return $this->notFound('Currency not found or inactive');
             }
 
@@ -125,7 +125,6 @@ class CurrencyController extends ApiController
             $code = trim((string) ($validated['code'] ?? ''));
             $symbol = trim((string) ($validated['symbol'] ?? ''));
 
-            // Livewire behavior: fallback between code/symbol
             if ($code === '' && $symbol !== '') {
                 $code = $symbol;
             } elseif ($symbol === '' && $code !== '') {
@@ -147,7 +146,7 @@ class CurrencyController extends ApiController
                 return $this->error('Currency code already exists.', 422);
             }
 
-            $isDefault = !Currency::where('is_default', true)->exists();
+            $isDefault = ! Currency::where('is_default', true)->exists();
             $rate = $isDefault ? 1.0 : (float) $validated['rate'];
 
             $currency = Currency::create([
@@ -178,7 +177,7 @@ class CurrencyController extends ApiController
     {
         try {
             $currency = Currency::find($id);
-            if (!$currency) {
+            if (! $currency) {
                 return $this->notFound('Currency not found');
             }
 
@@ -195,7 +194,6 @@ class CurrencyController extends ApiController
             $code = trim((string) ($validated['code'] ?? ''));
             $symbol = trim((string) ($validated['symbol'] ?? ''));
 
-            // Livewire behavior: fallback between code/symbol
             if ($code === '' && $symbol !== '') {
                 $code = $symbol;
             } elseif ($symbol === '' && $code !== '') {
@@ -251,7 +249,7 @@ class CurrencyController extends ApiController
     {
         try {
             $currency = Currency::find($id);
-            if (!$currency) {
+            if (! $currency) {
                 return $this->notFound('Currency not found');
             }
 
@@ -271,7 +269,7 @@ class CurrencyController extends ApiController
     {
         try {
             $currency = Currency::find($id);
-            if (!$currency) {
+            if (! $currency) {
                 return $this->notFound('Currency not found');
             }
 
@@ -279,7 +277,7 @@ class CurrencyController extends ApiController
                 return $this->error('Cannot deactivate the default currency.', 422);
             }
 
-            $currency->update(['is_active' => !$currency->is_active]);
+            $currency->update(['is_active' => ! $currency->is_active]);
             $currency->refresh();
 
             return $this->success($currency, 'Currency status updated', 200);
@@ -292,11 +290,11 @@ class CurrencyController extends ApiController
     {
         try {
             $currency = Currency::find($id);
-            if (!$currency) {
+            if (! $currency) {
                 return $this->notFound('Currency not found');
             }
 
-            if (!$currency->is_active) {
+            if (! $currency->is_active) {
                 return $this->error('Cannot set an inactive currency as default.', 422);
             }
 
@@ -321,8 +319,8 @@ class CurrencyController extends ApiController
             return $this->success($currency, 'Default currency updated', 200);
         } catch (\Throwable $th) {
             DB::rollBack();
+
             return $this->error($th->getMessage(), 500);
         }
     }
 }
-

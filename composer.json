@@ -6,11 +6,13 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
-    "laravel/framework": "^12.0 || ^13.0",
-    "vormiaphp/vormia": "^5.0"
+        "laravel/framework": "^12.0 || ^13.0",
+        "vormiaphp/vormia": "^5.0"
     },
     "suggest": {
-    "vormiaphp/vormia": "^5.0"
+        "livewire/livewire": "With livewire/volt for the package admin Volt UI.",
+        "livewire/volt": "Registers /admin/atu/currencies routes from the package.",
+        "vormiaphp/ui-livewireflux-admin": "Matches the Flux admin shell used by the Volt pages."
     },
     "require-dev": {
         "phpunit/phpunit": "^11.2"
