@@ -182,9 +182,8 @@ If Volt is not installed, use the reference stubs under `vendor/vormia-folks/atu
 | Document | Description |
 | --- | --- |
 | [`CHANGELOG.md`](CHANGELOG.md) | Version history (Keep a Changelog) |
-| [`docs/build-guide.md`](docs/build-guide.md) | Install model, env, migrations, API |
-| [`docs/build-ui-guide.md`](docs/build-ui-guide.md) | UI commands, Flux sidebar, UI contract |
-| [`docs/package-creation-guide.md`](docs/package-creation-guide.md) | Template for ATU-style Laravel packages |
+| [`docs/build-guide.md`](docs/build-guide.md) | Install, database, API, admin UI (Volt/Flux), UI contract |
+| [`docs/package-creation-guide.md`](docs/package-creation-guide.md) | Template for ATU-style Laravel packages (optional) |
 | [`docs/releases/v2.1.0.md`](docs/releases/v2.1.0.md) | Release notes for v2.1.0 |
 
 [A2Commerce](https://github.com/a2-atu/a2commerce) documents the commerce core this package extends.

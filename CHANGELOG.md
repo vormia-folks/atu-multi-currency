@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Merged **`docs/build-ui-guide.md`** into **`docs/build-guide.md`** as one document (core install + admin UI + UI contract). Removed **`docs/build-ui-guide.md`**.
+
 ## [2.1.0] - 2026-05-11
 
 Narrative upgrade guide: [`docs/releases/v2.1.0.md`](docs/releases/v2.1.0.md).
@@ -27,7 +31,7 @@ Narrative upgrade guide: [`docs/releases/v2.1.0.md`](docs/releases/v2.1.0.md).
 
 ### Documentation
 
-- **`README.md`**, **`docs/build-guide.md`**, and **`docs/build-ui-guide.md`** updated for the v2.1 vendor-loaded architecture.
+- **`README.md`** and **`docs/build-guide.md`** updated for the v2.1 vendor-loaded architecture (build guide now includes the former UI guide).
 
 ### Version constant
 
