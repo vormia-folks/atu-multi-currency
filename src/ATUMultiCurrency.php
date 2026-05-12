@@ -86,7 +86,8 @@ class ATUMultiCurrency
 
     /**
      * True when the host app has ATU admin Livewire single-file views under resources/views
-     * (published by ui-install). The service provider skips Livewire::addLocation for the package path.
+     * (published by ui-install). The service provider passes this path to Livewire::addLocation
+     * instead of the package vendor path so routes resolve to the copied blades.
      */
     public static function appHasCopiedAtuAdminLivewireViews(?string $appBasePath = null): bool
     {
