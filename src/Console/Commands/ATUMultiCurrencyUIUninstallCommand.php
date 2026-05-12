@@ -5,6 +5,7 @@ namespace Vormia\ATUMultiCurrency\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
+use Vormia\ATUMultiCurrency\Support\FluxAdminUiInstaller;
 
 class ATUMultiCurrencyUIUninstallCommand extends Command
 {
@@ -30,6 +31,7 @@ class ATUMultiCurrencyUIUninstallCommand extends Command
         $this->removeLegacyCopiedViews();
         $this->removeMarkedRoutes();
         $this->removeMarkedSidebar();
+        FluxAdminUiInstaller::default()->removePublishedSidebarMenuPartial();
 
         foreach (['config:clear', 'route:clear', 'view:clear', 'cache:clear'] as $command) {
             try {
@@ -60,6 +62,12 @@ class ATUMultiCurrencyUIUninstallCommand extends Command
             resource_path('views/livewire/admin/atu') => $backupDir . '/views/livewire/admin/atu',
             base_path('routes/web.php') => $backupDir . '/routes/web.php',
         ];
+
+        $partial = resource_path('views/components/atu-multicurrency/sidebar-menu.blade.php');
+        if (File::exists($partial)) {
+            $rel = ltrim(str_replace(base_path(), '', $partial), DIRECTORY_SEPARATOR);
+            $map[$partial] = $backupDir . '/' . str_replace(DIRECTORY_SEPARATOR, '/', $rel);
+        }
 
         foreach ($sidebarPaths as $sidebarPath) {
             $rel = ltrim(str_replace(base_path(), '', $sidebarPath), DIRECTORY_SEPARATOR);

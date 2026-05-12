@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
 use Livewire\Livewire;
 use Vormia\ATUMultiCurrency\ATUMultiCurrency;
+use Vormia\ATUMultiCurrency\Support\FluxAdminUiInstaller;
 
 class ATUMultiCurrencyUIInstallCommand extends Command
 {
@@ -156,27 +157,37 @@ class ATUMultiCurrencyUIInstallCommand extends Command
     private function injectSidebarMenu(): void
     {
         $sidebarPath = $this->resolveSidebarPath();
-        $sidebarToAdd = ATUMultiCurrency::stubsPath('reference/sidebar-menu-to-add.blade.php');
+        $referenceStub = ATUMultiCurrency::stubsPath('reference/sidebar-menu-to-add.blade.php');
+        $installer = FluxAdminUiInstaller::default();
 
         if ($sidebarPath === null) {
             $this->warn('Sidebar not found (checked resources/views/layouts/app/sidebar.blade.php and resources/views/components/layouts/app/sidebar.blade.php).');
-            $this->line('Merge manually from: ' . $sidebarToAdd);
+            $this->line('Merge manually from: ' . $referenceStub);
 
             return;
         }
 
-        if (! File::exists($sidebarToAdd)) {
-            $this->error('Reference stub missing: ' . $sidebarToAdd);
+        if (! $installer->publishSidebarMenuPartial($this)) {
+            $this->error('Could not publish sidebar partial from: ' . $installer->sidebarMenuPartialSourcePath());
 
             return;
         }
+
+        $this->info('Copied sidebar partial to: ' . $installer->sidebarMenuPartialDestinationPath());
 
         $content = File::get($sidebarPath);
-        $sidebarContent = File::get($sidebarToAdd);
-        $sidebarContent = preg_replace('/^<\?php\s*/', '', $sidebarContent);
-        $sidebarContent = preg_replace('/\?>\s*/', '', $sidebarContent);
-        $sidebarContent = preg_replace('/\/\/.*$/m', '', $sidebarContent);
-        $sidebarContent = trim($sidebarContent);
+
+        if (str_contains($content, 'components.atu-multicurrency.sidebar-menu')) {
+            $this->warn('Sidebar already includes the ATU menu partial. Skipping layout injection.');
+
+            return;
+        }
+
+        if (str_contains($content, '>>> ATU Multi-Currency Sidebar START')) {
+            $this->warn('Sidebar already contains the marked ATU block. Skipping layout injection.');
+
+            return;
+        }
 
         $markers = [
             'admin.atu.currencies.index',
@@ -185,44 +196,43 @@ class ATUMultiCurrencyUIInstallCommand extends Command
 
         foreach ($markers as $marker) {
             if (str_contains($content, $marker)) {
-                $this->warn('Sidebar already contains ATU currency links. Skipping.');
+                $this->warn('Sidebar already contains ATU currency links (legacy inline). Skipping layout injection.');
 
                 return;
             }
         }
 
-        if (str_contains($content, '>>> ATU Multi-Currency Sidebar START')) {
-            $this->warn('Sidebar already contains the marked ATU block. Skipping.');
-
-            return;
-        }
+        // Same three lines as injecting a small @include (see vormiaphp/ui-livewireflux-admin InstallCommand pattern).
+        $injectBlock = <<<'BLADE'
+{{-- >>> ATU Multi-Currency Sidebar START --}}
+@include('components.atu-multicurrency.sidebar-menu')
+{{-- >>> ATU Multi-Currency Sidebar END --}}
+BLADE;
 
         $lines = explode("\n", $content);
         $insertionLine = $this->findSidebarSnippetInsertionLine($lines);
 
         if ($insertionLine !== -1 && $insertionLine <= count($lines)) {
-            $sidebarLines = explode("\n", $sidebarContent);
-            array_splice($lines, $insertionLine, 0, $sidebarLines);
+            $injectLines = explode("\n", trim($injectBlock));
+            array_splice($lines, $insertionLine, 0, $injectLines);
             File::put($sidebarPath, implode("\n", $lines));
-            $this->info('Sidebar snippet injected into the Platform group (' . basename(dirname($sidebarPath)) . '/' . basename($sidebarPath) . ').');
+            $this->info('Injected @include into the Platform group (' . basename(dirname($sidebarPath)) . '/' . basename($sidebarPath) . ').');
         } else {
-            $this->warn('Could not find a Platform flux:sidebar.group or flux:navlist.group. Merge manually from: ' . $sidebarToAdd);
+            $this->warn('Could not find Platform flux:sidebar.group or flux:navlist.group. Add @include manually; see: ' . $referenceStub);
         }
     }
 
     /**
-     * Return the 0-based line index to splice new lines before (inside the Platform group,
-     * immediately before its closing tag). Matches both Flux admin shells.
+     * Same insertion-point logic as vormiaphp/ui-livewireflux-admin InstallCommand::injectSidebarMenu()
+     * (flux:sidebar.group), plus flux:navlist.group for newer layouts.
      *
      * @param  array<int, string>  $lines
      */
     private function findSidebarSnippetInsertionLine(array $lines): int
     {
-        // ui-livewireflux-admin: <flux:sidebar.group ... heading="__('Platform')" ...>
         for ($i = 0; $i < count($lines); $i++) {
-            if (preg_match('/<flux:sidebar\.group\b[^>]*\bPlatform\b/i', $lines[$i])
-                || preg_match('/<flux:sidebar\.group\b[^>]*heading\s*=\s*["\']__\(\s*[\'"]Platform[\'"]\s*\)["\']/i', $lines[$i])) {
-                for ($j = $i + 1; $j < min($i + 80, count($lines)); $j++) {
+            if (preg_match('/<flux:sidebar\.group\s+.*?:heading=["\']__\(["\']Platform["\']\)["\'].*?>/i', $lines[$i])) {
+                for ($j = $i + 1; $j < min($i + 50, count($lines)); $j++) {
                     if (preg_match('/<\/flux:sidebar\.group>/i', $lines[$j])) {
                         return $j;
                     }
@@ -230,7 +240,16 @@ class ATUMultiCurrencyUIInstallCommand extends Command
             }
         }
 
-        // Newer layouts: <flux:navlist.group ... Platform ...> (class="grid" optional)
+        for ($i = 0; $i < count($lines); $i++) {
+            if (preg_match('/<flux:sidebar\.group.*?heading.*?Platform.*?>/i', $lines[$i])) {
+                for ($j = $i + 1; $j < min($i + 50, count($lines)); $j++) {
+                    if (preg_match('/<\/flux:sidebar\.group>/i', $lines[$j])) {
+                        return $j;
+                    }
+                }
+            }
+        }
+
         for ($i = 0; $i < count($lines); $i++) {
             if (preg_match('/<flux:navlist\.group\b[^>]*\bPlatform\b/i', $lines[$i])) {
                 for ($j = $i + 1; $j < min($i + 80, count($lines)); $j++) {
@@ -264,6 +283,7 @@ class ATUMultiCurrencyUIInstallCommand extends Command
         $this->line('Reference stubs (optional manual merge):');
         $this->line('  ' . ATUMultiCurrency::stubsPath('reference/routes-to-add.php'));
         $this->line('  ' . ATUMultiCurrency::stubsPath('reference/sidebar-menu-to-add.blade.php'));
+        $this->line('Published sidebar partial (after --inject-sidebar): resources/views/components/atu-multicurrency/sidebar-menu.blade.php');
         $this->newLine();
     }
 }
