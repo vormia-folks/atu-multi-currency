@@ -8,14 +8,15 @@ use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
 use Livewire\Livewire;
+use RuntimeException;
 use Vormia\ATUMultiCurrency\ATUMultiCurrency;
-use Vormia\ATUMultiCurrency\Support\FluxAdminUiInstaller;
+use Vormia\ATUMultiCurrency\Support\ATUMultiCurrencyUiKit;
 
 class ATUMultiCurrencyUIInstallCommand extends Command
 {
     protected $signature = 'atumulticurrency:ui-install {--inject-sidebar : Inject Flux sidebar snippet into the app layout (optional)}';
 
-    protected $description = 'Verify ATU Multi-Currency UI dependencies; optionally inject Flux sidebar (admin views and routes load from the package; Livewire is a Composer dependency of this package)';
+    protected $description = 'Verify ATU Multi-Currency UI dependencies; copy view stubs; inject routes and optional Flux sidebar like ui-livewireflux-admin';
 
     public function handle(): int
     {
@@ -35,10 +36,21 @@ class ATUMultiCurrencyUIInstallCommand extends Command
             $this->line('  ' . ATUMultiCurrency::stubsPath('reference/routes-to-add.php'));
             $this->newLine();
         } else {
-            $this->info('Livewire is installed: admin UI routes are registered by the package at /admin/atu/currencies');
+            $this->info('Livewire is installed: admin UI routes resolve under /admin/atu/currencies');
         }
 
-        $this->mergeWebRoutesIfNeeded();
+        $this->info('Copying view stubs into resources/views (same pattern as ui-livewireflux-admin)...');
+        $kit = ATUMultiCurrencyUiKit::default();
+        try {
+            $kit->copyViewStubsToApp();
+            $this->line('  Done: ' . $kit->viewsStubDestination());
+        } catch (RuntimeException $e) {
+            $this->error($e->getMessage());
+
+            return self::FAILURE;
+        }
+
+        $this->injectRoutes();
 
         if ($this->option('inject-sidebar') && InstalledVersions::isInstalled('livewire/flux')) {
             $this->injectSidebarMenu();
@@ -93,7 +105,78 @@ class ATUMultiCurrencyUIInstallCommand extends Command
     }
 
     /**
-     * Match vormiaphp/ui-livewireflux-admin: primary layouts path, then components path.
+     * Inject ATU admin routes into routes/web.php inside the auth middleware group (vormiaphp/ui-livewireflux-admin style).
+     */
+    private function injectRoutes(): void
+    {
+        $routesPath = base_path('routes/web.php');
+        $routesToAdd = ATUMultiCurrency::stubsPath('reference/routes-to-add.php');
+
+        if (! File::exists($routesPath)) {
+            $this->error('routes/web.php not found.');
+
+            return;
+        }
+
+        if (! File::exists($routesToAdd)) {
+            $this->error('routes-to-add stub not found: ' . $routesToAdd);
+
+            return;
+        }
+
+        $content = File::get($routesPath);
+        $stubRaw = File::get($routesToAdd);
+
+        if (! preg_match(
+            '/\/\/\s*>>>\s*ATU Multi-Currency Web Routes START.*?\/\/\s*>>>\s*ATU Multi-Currency Web Routes END/s',
+            $stubRaw,
+            $m
+        )) {
+            $this->error('Could not extract marked route block from: ' . $routesToAdd);
+
+            return;
+        }
+
+        $routesContent = trim($m[0]);
+
+        $routeMarkers = [
+            'admin.atu.currencies.index',
+            "Route::prefix('admin/atu')",
+            ATUMultiCurrency::ATU_WEB_ROUTES_FILE_MARKER,
+        ];
+
+        foreach ($routeMarkers as $marker) {
+            if (str_contains($content, $marker)) {
+                $this->line('ATU admin routes already appear in routes/web.php. Skipping route injection.');
+
+                return;
+            }
+        }
+
+        $middlewarePatterns = [
+            '/(Route::middleware\(\[\s*[\'"]auth[\'"]\s*,\s*[\'"]verified[\'"]\s*\]\)->group\(function\s*\(\)\s*\{)/s',
+            '/(Route::middleware\(\[[\'"]auth[\'"]\]\)->group\(function\s*\(\)\s*\{)/s',
+            '/(Route::middleware\s*\(\s*\[[\'"]auth[\'"]\s*\]\s*\)\s*->\s*group\s*\(\s*function\s*\(\)\s*\{)/s',
+        ];
+
+        foreach ($middlewarePatterns as $pattern) {
+            if (preg_match($pattern, $content, $matches)) {
+                $insertionPoint = strpos($content, $matches[1]) + strlen($matches[1]);
+                $content = substr_replace($content, "\n    " . $routesContent . "\n", $insertionPoint, 0);
+                File::put($routesPath, $content);
+                $this->info('Injected ATU admin routes into routes/web.php (inside auth middleware group).');
+
+                return;
+            }
+        }
+
+        $this->warn('Could not find auth middleware group in routes/web.php.');
+        $this->line('Add the routes from: ' . $routesToAdd);
+        $this->line('Place them inside Route::middleware([\'auth\'])->group(...) or with verified, as in ui-livewireflux-admin.');
+    }
+
+    /**
+     * Primary layouts path, then components path (same as ui-livewireflux-admin getSidebarPath).
      */
     private function resolveSidebarPath(): ?string
     {
@@ -108,124 +191,67 @@ class ATUMultiCurrencyUIInstallCommand extends Command
     }
 
     /**
-     * Append the marked ATU route block to routes/web.php when it is not already present
-     * and the named routes are not registered (avoids duplicate definitions when the package
-     * service provider already loaded routes).
+     * Paste sidebar markup from the reference stub (same approach as ui-livewireflux-admin injectSidebarMenu).
      */
-    private function mergeWebRoutesIfNeeded(): void
-    {
-        $routesPath = base_path('routes/web.php');
-        $stubPath = ATUMultiCurrency::stubsPath('reference/routes-to-add.php');
-
-        if (! File::exists($routesPath)) {
-            $this->warn('routes/web.php not found; skipping route merge.');
-
-            return;
-        }
-
-        if (! File::exists($stubPath)) {
-            $this->error('Route reference stub missing: ' . $stubPath);
-
-            return;
-        }
-
-        $webContent = File::get($routesPath);
-
-        if (str_contains($webContent, ATUMultiCurrency::ATU_WEB_ROUTES_FILE_MARKER)) {
-            $this->line('routes/web.php already contains the marked ATU route block. Skipping route merge.');
-
-            return;
-        }
-
-        $stubRaw = File::get($stubPath);
-        if (! preg_match(
-            '/\/\/\s*>>>\s*ATU Multi-Currency Web Routes START.*?\/\/\s*>>>\s*ATU Multi-Currency Web Routes END/s',
-            $stubRaw,
-            $m
-        )) {
-            $this->error('Could not extract marked route block from: ' . $stubPath);
-
-            return;
-        }
-
-        $block = trim($m[0]);
-        $append = "\n\n" . $block . "\n";
-        File::put($routesPath, rtrim($webContent) . $append);
-        $this->info('Merged ATU admin route block into routes/web.php (marked for ui-uninstall). On the next app bootstrap the package skips loading the duplicate route file.');
-    }
-
     private function injectSidebarMenu(): void
     {
         $sidebarPath = $this->resolveSidebarPath();
-        $referenceStub = ATUMultiCurrency::stubsPath('reference/sidebar-menu-to-add.blade.php');
-        $installer = FluxAdminUiInstaller::default();
+        $sidebarToAdd = ATUMultiCurrency::stubsPath('reference/sidebar-menu-to-add.blade.php');
 
         if ($sidebarPath === null) {
             $this->warn('Sidebar not found (checked resources/views/layouts/app/sidebar.blade.php and resources/views/components/layouts/app/sidebar.blade.php).');
-            $this->line('Merge manually from: ' . $referenceStub);
+            $this->line('Merge manually from: ' . $sidebarToAdd);
 
             return;
         }
 
-        if (! $installer->publishSidebarMenuPartial($this)) {
-            $this->error('Could not publish sidebar partial from: ' . $installer->sidebarMenuPartialSourcePath());
+        if (! File::exists($sidebarToAdd)) {
+            $this->error('Reference stub missing: ' . $sidebarToAdd);
 
             return;
         }
-
-        $this->info('Copied sidebar partial to: ' . $installer->sidebarMenuPartialDestinationPath());
 
         $content = File::get($sidebarPath);
+        $sidebarContent = File::get($sidebarToAdd);
+        $sidebarContent = preg_replace('/^<\?php\s*/', '', $sidebarContent);
+        $sidebarContent = preg_replace('/\?>\s*/', '', $sidebarContent);
+        $sidebarContent = preg_replace('/\/\/.*$/m', '', $sidebarContent);
+        $sidebarContent = trim($sidebarContent);
 
-        if (str_contains($content, 'components.atu-multicurrency.sidebar-menu')) {
-            $this->warn('Sidebar already includes the ATU menu partial. Skipping layout injection.');
-
-            return;
-        }
-
-        if (str_contains($content, '>>> ATU Multi-Currency Sidebar START')) {
-            $this->warn('Sidebar already contains the marked ATU block. Skipping layout injection.');
-
-            return;
-        }
-
-        $markers = [
+        $menuMarkers = [
             'admin.atu.currencies.index',
             "route('admin.atu.currencies.index')",
+            "{{ __('Currencies') }}",
         ];
 
-        foreach ($markers as $marker) {
+        foreach ($menuMarkers as $marker) {
             if (str_contains($content, $marker)) {
-                $this->warn('Sidebar already contains ATU currency links (legacy inline). Skipping layout injection.');
+                $this->warn('Sidebar already contains ATU currency links. Skipping sidebar injection.');
 
                 return;
             }
         }
 
-        // Same three lines as injecting a small @include (see vormiaphp/ui-livewireflux-admin InstallCommand pattern).
-        $injectBlock = <<<'BLADE'
-{{-- >>> ATU Multi-Currency Sidebar START --}}
-@include('components.atu-multicurrency.sidebar-menu')
-{{-- >>> ATU Multi-Currency Sidebar END --}}
-BLADE;
+        if (str_contains($content, '>>> ATU Multi-Currency Sidebar START')) {
+            $this->warn('Sidebar already contains the marked ATU block. Skipping.');
+
+            return;
+        }
 
         $lines = explode("\n", $content);
         $insertionLine = $this->findSidebarSnippetInsertionLine($lines);
 
         if ($insertionLine !== -1 && $insertionLine <= count($lines)) {
-            $injectLines = explode("\n", trim($injectBlock));
-            array_splice($lines, $insertionLine, 0, $injectLines);
+            $sidebarLines = explode("\n", $sidebarContent);
+            array_splice($lines, $insertionLine, 0, $sidebarLines);
             File::put($sidebarPath, implode("\n", $lines));
-            $this->info('Injected @include into the Platform group (' . basename(dirname($sidebarPath)) . '/' . basename($sidebarPath) . ').');
+            $this->info('Sidebar menu injected into the Platform group (' . basename(dirname($sidebarPath)) . '/' . basename($sidebarPath) . ').');
         } else {
-            $this->warn('Could not find Platform flux:sidebar.group or flux:navlist.group. Add @include manually; see: ' . $referenceStub);
+            $this->warn('Could not find Platform flux:sidebar.group or flux:navlist.group. Merge manually from: ' . $sidebarToAdd);
         }
     }
 
     /**
-     * Same insertion-point logic as vormiaphp/ui-livewireflux-admin InstallCommand::injectSidebarMenu()
-     * (flux:sidebar.group), plus flux:navlist.group for newer layouts.
-     *
      * @param  array<int, string>  $lines
      */
     private function findSidebarSnippetInsertionLine(array $lines): int
@@ -279,11 +305,11 @@ BLADE;
     private function displayCompletionMessage(): void
     {
         $this->newLine();
-        $this->info('UI setup check finished.');
+        $this->info('UI setup finished.');
+        $this->line('Admin Livewire views were copied into your app; re-run this command after package updates to refresh files (you may be prompted to overwrite).');
         $this->line('Reference stubs (optional manual merge):');
         $this->line('  ' . ATUMultiCurrency::stubsPath('reference/routes-to-add.php'));
         $this->line('  ' . ATUMultiCurrency::stubsPath('reference/sidebar-menu-to-add.blade.php'));
-        $this->line('Published sidebar partial (after --inject-sidebar): resources/views/components/atu-multicurrency/sidebar-menu.blade.php');
         $this->newLine();
     }
 }

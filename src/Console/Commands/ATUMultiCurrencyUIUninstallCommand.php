@@ -5,7 +5,6 @@ namespace Vormia\ATUMultiCurrency\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
-use Vormia\ATUMultiCurrency\Support\FluxAdminUiInstaller;
 
 class ATUMultiCurrencyUIUninstallCommand extends Command
 {
@@ -31,7 +30,6 @@ class ATUMultiCurrencyUIUninstallCommand extends Command
         $this->removeLegacyCopiedViews();
         $this->removeMarkedRoutes();
         $this->removeMarkedSidebar();
-        FluxAdminUiInstaller::default()->removePublishedSidebarMenuPartial();
 
         foreach (['config:clear', 'route:clear', 'view:clear', 'cache:clear'] as $command) {
             try {
@@ -63,12 +61,6 @@ class ATUMultiCurrencyUIUninstallCommand extends Command
             base_path('routes/web.php') => $backupDir . '/routes/web.php',
         ];
 
-        $partial = resource_path('views/components/atu-multicurrency/sidebar-menu.blade.php');
-        if (File::exists($partial)) {
-            $rel = ltrim(str_replace(base_path(), '', $partial), DIRECTORY_SEPARATOR);
-            $map[$partial] = $backupDir . '/' . str_replace(DIRECTORY_SEPARATOR, '/', $rel);
-        }
-
         foreach ($sidebarPaths as $sidebarPath) {
             $rel = ltrim(str_replace(base_path(), '', $sidebarPath), DIRECTORY_SEPARATOR);
             $map[$sidebarPath] = $backupDir . '/' . str_replace(DIRECTORY_SEPARATOR, '/', $rel);
@@ -95,6 +87,12 @@ class ATUMultiCurrencyUIUninstallCommand extends Command
         if (File::exists($path)) {
             File::deleteDirectory($path);
             $this->line('Removed legacy copied views: resources/views/livewire/admin/atu');
+        }
+
+        $legacyAtuComponents = resource_path('views/components/atu-multicurrency');
+        if (File::isDirectory($legacyAtuComponents) && File::isEmptyDirectory($legacyAtuComponents, true)) {
+            File::deleteDirectory($legacyAtuComponents);
+            $this->line('Removed empty resources/views/components/atu-multicurrency (legacy partial path).');
         }
     }
 

@@ -46,9 +46,11 @@ class ATUMultiCurrencyServiceProvider extends ServiceProvider
 
         $this->loadRoutesFrom(ATUMultiCurrency::packageRoot() . '/routes/atu-multicurrency-api.php');
 
-        Livewire::addLocation(
-            viewPath: ATUMultiCurrency::stubsPath('resources/views/livewire/admin/atu')
-        );
+        if (! ATUMultiCurrency::appHasCopiedAtuAdminLivewireViews($this->app->basePath())) {
+            Livewire::addLocation(
+                viewPath: ATUMultiCurrency::stubsPath('resources/views/livewire/admin/atu')
+            );
+        }
 
         if (! ATUMultiCurrency::hostWebPhpContainsAtuAdminRouteBlock($this->app->basePath())) {
             $this->loadRoutesFrom(ATUMultiCurrency::packageRoot() . '/routes/atumulticurrency-web.php');

@@ -83,4 +83,33 @@ class ATUMultiCurrency
 
         return is_string($contents) && str_contains($contents, self::ATU_WEB_ROUTES_FILE_MARKER);
     }
+
+    /**
+     * True when the host app has ATU admin Livewire single-file views under resources/views
+     * (published by ui-install). The service provider skips Livewire::addLocation for the package path.
+     */
+    public static function appHasCopiedAtuAdminLivewireViews(?string $appBasePath = null): bool
+    {
+        $base = $appBasePath ?? (function_exists('base_path') ? base_path() : '');
+        if ($base === '') {
+            return false;
+        }
+
+        $dir = $base . DIRECTORY_SEPARATOR . 'resources' . DIRECTORY_SEPARATOR . 'views' . DIRECTORY_SEPARATOR
+            . 'livewire' . DIRECTORY_SEPARATOR . 'admin' . DIRECTORY_SEPARATOR . 'atu';
+        if (! is_dir($dir)) {
+            return false;
+        }
+
+        $iterator = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($dir, \FilesystemIterator::SKIP_DOTS)
+        );
+        foreach ($iterator as $file) {
+            if ($file->isFile() && str_ends_with($file->getFilename(), '.blade.php')) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 }
