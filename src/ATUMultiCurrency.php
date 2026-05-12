@@ -8,6 +8,9 @@ class ATUMultiCurrency
 {
     public const VERSION = '2.1.0';
 
+    /** Marker inside routes/web.php after `atumulticurrency:ui-install` merges admin routes. */
+    public const ATU_WEB_ROUTES_FILE_MARKER = '>>> ATU Multi-Currency Web Routes START';
+
     /**
      * Absolute path to the package root (directory containing composer.json).
      */
@@ -57,5 +60,27 @@ class ATUMultiCurrency
         $base = __DIR__ . '/stubs';
 
         return $suffix ? $base . '/' . ltrim($suffix, '/') : $base;
+    }
+
+    /**
+     * True when the host app's routes/web.php already contains the marked ATU admin block
+     * merged by `atumulticurrency:ui-install`. The service provider skips loading the same
+     * routes from the package file to avoid duplicate route names.
+     */
+    public static function hostWebPhpContainsAtuAdminRouteBlock(?string $appBasePath = null): bool
+    {
+        $base = $appBasePath ?? (function_exists('base_path') ? base_path() : '');
+        if ($base === '') {
+            return false;
+        }
+
+        $path = $base . DIRECTORY_SEPARATOR . 'routes' . DIRECTORY_SEPARATOR . 'web.php';
+        if (! is_file($path)) {
+            return false;
+        }
+
+        $contents = @file_get_contents($path);
+
+        return is_string($contents) && str_contains($contents, self::ATU_WEB_ROUTES_FILE_MARKER);
     }
 }

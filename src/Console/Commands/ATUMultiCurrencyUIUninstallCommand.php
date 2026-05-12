@@ -51,11 +51,20 @@ class ATUMultiCurrencyUIUninstallCommand extends Command
         $backupDir = storage_path('app/atu-multicurrency-ui-final-backup-' . date('Y-m-d-H-i-s'));
         File::ensureDirectoryExists($backupDir, 0755, true);
 
+        $sidebarPaths = array_filter([
+            resource_path('views/layouts/app/sidebar.blade.php'),
+            resource_path('views/components/layouts/app/sidebar.blade.php'),
+        ], fn (string $p): bool => File::exists($p));
+
         $map = [
             resource_path('views/livewire/admin/atu') => $backupDir . '/views/livewire/admin/atu',
             base_path('routes/web.php') => $backupDir . '/routes/web.php',
-            resource_path('views/components/layouts/app/sidebar.blade.php') => $backupDir . '/views/components/layouts/app/sidebar.blade.php',
         ];
+
+        foreach ($sidebarPaths as $sidebarPath) {
+            $rel = ltrim(str_replace(base_path(), '', $sidebarPath), DIRECTORY_SEPARATOR);
+            $map[$sidebarPath] = $backupDir . '/' . str_replace(DIRECTORY_SEPARATOR, '/', $rel);
+        }
 
         foreach ($map as $source => $destination) {
             if (! File::exists($source)) {
@@ -104,22 +113,31 @@ class ATUMultiCurrencyUIUninstallCommand extends Command
 
     private function removeMarkedSidebar(): void
     {
-        $sidebarPath = resource_path('views/components/layouts/app/sidebar.blade.php');
-        if (! File::exists($sidebarPath)) {
-            return;
-        }
+        $paths = [
+            resource_path('views/layouts/app/sidebar.blade.php'),
+            resource_path('views/components/layouts/app/sidebar.blade.php'),
+        ];
 
-        $content = File::get($sidebarPath);
         $pattern = '/\n?\{\{-- >>> ATU Multi-Currency Sidebar START --\}\}.*?\{\{-- >>> ATU Multi-Currency Sidebar END --\}\}\s*\n?/s';
-        $updated = preg_replace($pattern, "\n", $content, -1, $count);
+        $removedAny = false;
 
-        if ($count > 0) {
-            File::put($sidebarPath, preg_replace("/\n{3,}/", "\n\n", $updated));
-            $this->line('Removed marked ATU sidebar block.');
+        foreach ($paths as $sidebarPath) {
+            if (! File::exists($sidebarPath)) {
+                continue;
+            }
 
-            return;
+            $content = File::get($sidebarPath);
+            $updated = preg_replace($pattern, "\n", $content, -1, $count);
+
+            if ($count > 0) {
+                File::put($sidebarPath, preg_replace("/\n{3,}/", "\n\n", $updated));
+                $this->line('Removed marked ATU sidebar block from ' . $sidebarPath . '.');
+                $removedAny = true;
+            }
         }
 
-        $this->line('No marked ATU sidebar block found.');
+        if (! $removedAny) {
+            $this->line('No marked ATU sidebar block found.');
+        }
     }
 }

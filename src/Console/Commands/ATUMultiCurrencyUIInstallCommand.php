@@ -37,6 +37,8 @@ class ATUMultiCurrencyUIInstallCommand extends Command
             $this->info('Livewire is installed: admin UI routes are registered by the package at /admin/atu/currencies');
         }
 
+        $this->mergeWebRoutesIfNeeded();
+
         if ($this->option('inject-sidebar') && InstalledVersions::isInstalled('livewire/flux')) {
             $this->injectSidebarMenu();
         } elseif (InstalledVersions::isInstalled('livewire/flux')) {
@@ -89,13 +91,75 @@ class ATUMultiCurrencyUIInstallCommand extends Command
         return true;
     }
 
+    /**
+     * Match vormiaphp/ui-livewireflux-admin: primary layouts path, then components path.
+     */
+    private function resolveSidebarPath(): ?string
+    {
+        $primary = resource_path('views/layouts/app/sidebar.blade.php');
+        $fallback = resource_path('views/components/layouts/app/sidebar.blade.php');
+
+        if (File::exists($primary)) {
+            return $primary;
+        }
+
+        return File::exists($fallback) ? $fallback : null;
+    }
+
+    /**
+     * Append the marked ATU route block to routes/web.php when it is not already present
+     * and the named routes are not registered (avoids duplicate definitions when the package
+     * service provider already loaded routes).
+     */
+    private function mergeWebRoutesIfNeeded(): void
+    {
+        $routesPath = base_path('routes/web.php');
+        $stubPath = ATUMultiCurrency::stubsPath('reference/routes-to-add.php');
+
+        if (! File::exists($routesPath)) {
+            $this->warn('routes/web.php not found; skipping route merge.');
+
+            return;
+        }
+
+        if (! File::exists($stubPath)) {
+            $this->error('Route reference stub missing: ' . $stubPath);
+
+            return;
+        }
+
+        $webContent = File::get($routesPath);
+
+        if (str_contains($webContent, ATUMultiCurrency::ATU_WEB_ROUTES_FILE_MARKER)) {
+            $this->line('routes/web.php already contains the marked ATU route block. Skipping route merge.');
+
+            return;
+        }
+
+        $stubRaw = File::get($stubPath);
+        if (! preg_match(
+            '/\/\/\s*>>>\s*ATU Multi-Currency Web Routes START.*?\/\/\s*>>>\s*ATU Multi-Currency Web Routes END/s',
+            $stubRaw,
+            $m
+        )) {
+            $this->error('Could not extract marked route block from: ' . $stubPath);
+
+            return;
+        }
+
+        $block = trim($m[0]);
+        $append = "\n\n" . $block . "\n";
+        File::put($routesPath, rtrim($webContent) . $append);
+        $this->info('Merged ATU admin route block into routes/web.php (marked for ui-uninstall). On the next app bootstrap the package skips loading the duplicate route file.');
+    }
+
     private function injectSidebarMenu(): void
     {
-        $sidebarPath = resource_path('views/components/layouts/app/sidebar.blade.php');
+        $sidebarPath = $this->resolveSidebarPath();
         $sidebarToAdd = ATUMultiCurrency::stubsPath('reference/sidebar-menu-to-add.blade.php');
 
-        if (! File::exists($sidebarPath)) {
-            $this->warn('Sidebar not found: ' . $sidebarPath);
+        if ($sidebarPath === null) {
+            $this->warn('Sidebar not found (checked resources/views/layouts/app/sidebar.blade.php and resources/views/components/layouts/app/sidebar.blade.php).');
             $this->line('Merge manually from: ' . $sidebarToAdd);
 
             return;
@@ -127,42 +191,57 @@ class ATUMultiCurrencyUIInstallCommand extends Command
             }
         }
 
+        if (str_contains($content, '>>> ATU Multi-Currency Sidebar START')) {
+            $this->warn('Sidebar already contains the marked ATU block. Skipping.');
+
+            return;
+        }
+
         $lines = explode("\n", $content);
-        $insertionLine = -1;
-        $inPlatformGroup = false;
-
-        for ($i = 0; $i < count($lines); $i++) {
-            if (preg_match('/<flux:navlist\.group\s+.*?:heading=["\']__\(["\']Platform["\']\)["\'].*?class=["\']grid["\']>/i', $lines[$i])) {
-                $inPlatformGroup = true;
-                continue;
-            }
-            if ($inPlatformGroup && preg_match('/<\/flux:navlist\.group>/i', $lines[$i])) {
-                $insertionLine = $i + 1;
-                break;
-            }
-        }
-
-        if ($insertionLine === -1) {
-            for ($i = 0; $i < count($lines); $i++) {
-                if (preg_match('/<flux:navlist\.group.*?heading.*?Platform.*?>/i', $lines[$i])) {
-                    for ($j = $i + 1; $j < min($i + 20, count($lines)); $j++) {
-                        if (preg_match('/<\/flux:navlist\.group>/i', $lines[$j])) {
-                            $insertionLine = $j + 1;
-                            break 2;
-                        }
-                    }
-                }
-            }
-        }
+        $insertionLine = $this->findSidebarSnippetInsertionLine($lines);
 
         if ($insertionLine !== -1 && $insertionLine <= count($lines)) {
             $sidebarLines = explode("\n", $sidebarContent);
             array_splice($lines, $insertionLine, 0, $sidebarLines);
             File::put($sidebarPath, implode("\n", $lines));
-            $this->info('Sidebar snippet injected after the Platform nav group.');
+            $this->info('Sidebar snippet injected into the Platform group (' . basename(dirname($sidebarPath)) . '/' . basename($sidebarPath) . ').');
         } else {
-            $this->warn('Could not find Platform navlist.group. Merge manually from: ' . $sidebarToAdd);
+            $this->warn('Could not find a Platform flux:sidebar.group or flux:navlist.group. Merge manually from: ' . $sidebarToAdd);
         }
+    }
+
+    /**
+     * Return the 0-based line index to splice new lines before (inside the Platform group,
+     * immediately before its closing tag). Matches both Flux admin shells.
+     *
+     * @param  array<int, string>  $lines
+     */
+    private function findSidebarSnippetInsertionLine(array $lines): int
+    {
+        // ui-livewireflux-admin: <flux:sidebar.group ... heading="__('Platform')" ...>
+        for ($i = 0; $i < count($lines); $i++) {
+            if (preg_match('/<flux:sidebar\.group\b[^>]*\bPlatform\b/i', $lines[$i])
+                || preg_match('/<flux:sidebar\.group\b[^>]*heading\s*=\s*["\']__\(\s*[\'"]Platform[\'"]\s*\)["\']/i', $lines[$i])) {
+                for ($j = $i + 1; $j < min($i + 80, count($lines)); $j++) {
+                    if (preg_match('/<\/flux:sidebar\.group>/i', $lines[$j])) {
+                        return $j;
+                    }
+                }
+            }
+        }
+
+        // Newer layouts: <flux:navlist.group ... Platform ...> (class="grid" optional)
+        for ($i = 0; $i < count($lines); $i++) {
+            if (preg_match('/<flux:navlist\.group\b[^>]*\bPlatform\b/i', $lines[$i])) {
+                for ($j = $i + 1; $j < min($i + 80, count($lines)); $j++) {
+                    if (preg_match('/<\/flux:navlist\.group>/i', $lines[$j])) {
+                        return $j;
+                    }
+                }
+            }
+        }
+
+        return -1;
     }
 
     private function clearCaches(): void

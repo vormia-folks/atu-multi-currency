@@ -1,9 +1,9 @@
 <?php
 
 // ATU Multi-Currency admin Livewire 4 full-page routes (optional manual merge).
-// The package registers these routes by default (Livewire is a Composer dependency), and calls
-// Livewire::addLocation(viewPath: <package>/src/stubs/resources/views/livewire/admin/atu)
-// in ATUMultiCurrencyServiceProvider::boot().
+// After `php artisan atumulticurrency:ui-install` appends this block to routes/web.php, the
+// package service provider detects the marker and does not load routes/atumulticurrency-web.php
+// again (no duplicate route names). Livewire::addLocation for admin views always runs from the package.
 //
 // If you copy only these routes into your app, you must also register that view path so
 // component names like currencies.index resolve — either duplicate the addLocation call
