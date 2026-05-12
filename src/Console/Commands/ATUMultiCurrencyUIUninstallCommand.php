@@ -40,7 +40,7 @@ class ATUMultiCurrencyUIUninstallCommand extends Command
         }
 
         $this->newLine();
-        $this->info('Done. Package UI still loads from vendor when Volt is installed.');
+        $this->info('Done. Package UI loads from vendor (Livewire is required by this package).');
         $this->line('Remove the package with: composer remove vormia-folks/atu-multi-currency');
 
         return self::SUCCESS;

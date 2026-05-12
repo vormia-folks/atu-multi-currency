@@ -2,7 +2,7 @@
 
 use Livewire\Attributes\On;
 use Livewire\WithPagination;
-use Livewire\Volt\Component;
+use Livewire\Component;
 use Livewire\Attributes\Computed;
 use Vormia\Vormia\Traits\Livewire\WithNotifications;
 use Vormia\Vormia\Models\Taxonomy;

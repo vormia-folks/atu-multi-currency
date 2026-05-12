@@ -19,7 +19,7 @@ class ATUMultiCurrencyInstallCommand extends Command
 
         $touchEnv = ! $this->option('skip-env');
 
-        $this->step('Registering package (no stub files are copied; routes, config, migrations, and Volt views load from vendor).');
+        $this->step('Registering package (no stub files are copied; routes, config, migrations, and Livewire views load from vendor).');
         $results = $installer->install($touchEnv);
 
         $this->step('Updating environment files...');
@@ -160,10 +160,10 @@ class ATUMultiCurrencyInstallCommand extends Command
             $this->line('   3. Optional seed: php artisan db:seed --class=' . \Vormia\ATUMultiCurrency\Database\Seeders\ATUMultiCurrencySeeder::class);
         }
         $this->line('   API routes are registered by the package under /api/atu/currency');
-        if (class_exists(\Livewire\Volt\Volt::class)) {
-            $this->line('   Admin Volt UI is registered at /admin/atu/currencies (when Volt is installed).');
+        if (class_exists(\Livewire\Livewire::class)) {
+            $this->line('   Admin Livewire UI is registered at /admin/atu/currencies.');
         } else {
-            $this->line('   Install livewire/volt for the admin UI, or merge stubs from src/stubs/reference/.');
+            $this->line('   Run composer install (this package requires livewire/livewire ^4 for the admin UI), or merge stubs from src/stubs/reference/.');
         }
         $this->newLine();
 

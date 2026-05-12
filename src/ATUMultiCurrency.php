@@ -50,7 +50,7 @@ class ATUMultiCurrency
     }
 
     /**
-     * Absolute path to the package stubs (reference snippets and Volt views).
+     * Absolute path to the package stubs (reference snippets and Livewire single-file views).
      */
     public static function stubsPath(string $suffix = ''): string
     {

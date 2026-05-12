@@ -8,7 +8,7 @@ ATU Multi-Currency is a **projection layer**: it converts and decorates for disp
 
 **A2 Commerce owns truth** — amounts in A2Commerce stay in base currency. ATU owns `atu_multicurrency_*` tables, conversion logs, and admin/API surfaces.
 
-**How the package is wired (v2.x)** — After `composer require`, Laravel loads **migrations, merged config, API routes, and (when Livewire Volt is installed) admin Volt routes** directly from the package under `vendor`. The installer **does not copy** migrations, controllers, or views into your app; it mainly ensures `.env` keys and walks you through migrate/seed.
+**How the package is wired (v2.x)** — After `composer require`, Laravel loads **migrations, merged config, API routes, and admin Livewire routes** directly from the package under `vendor` (`livewire/livewire` ^4 is required). The installer **does not copy** migrations, controllers, or views into your app; it mainly ensures `.env` keys and walks you through migrate/seed.
 
 ## Features
 
@@ -20,7 +20,7 @@ ATU Multi-Currency is a **projection layer**: it converts and decorates for disp
 - **Settings storage** — Database-backed settings (configurable via `ATU_CURRENCY_SETTINGS_SOURCE`)
 - **A2Commerce integration** — Optional read/sync of base currency via `a2_ec_settings` (key/value rows)
 - **JSON API** — Registered under `/api/atu/currency`
-- **Admin UI** — Livewire Volt pages served from the package when `livewire/volt` is installed
+- **Admin UI** — Livewire 4 full-page components served from the package
 - **Artisan tooling** — Install, refresh, uninstall, UI checks, and help
 
 ## Requirements
@@ -29,16 +29,16 @@ ATU Multi-Currency is a **projection layer**: it converts and decorates for disp
 - Laravel 12.x or 13.x
 - [Vormia](https://github.com/vormiaphp/vormia) 5.x (install in your app first)
 
-### Optional (admin UI)
+### Optional (Flux admin shell)
 
-- `livewire/livewire` and `livewire/volt` — required for package-registered admin routes
 - `vormiaphp/ui-livewireflux-admin` — required by `atumulticurrency:ui-install` for layout compatibility checks
 - `livewire/flux` — optional; use `ui-install --inject-sidebar` to merge menu snippets
 
-See `composer.json` `suggest` for the exact package names.
+`livewire/livewire` **^4** is required by this package (declared in `composer.json`). See `composer.json` `suggest` for optional Flux-related packages.
 
 ## Dependencies
 
+- **livewire/livewire** (required, ^4) — Admin UI routes and single-file components
 - **vormiaphp/vormia** (required) — Users, taxonomies, and related infrastructure
 
 **A2Commerce** is optional. If `a2_ec_settings` exists, the seeder and sync services can align the default currency with A2; otherwise defaults apply (for example USD).
@@ -62,7 +62,7 @@ php artisan atumulticurrency:install
 This command:
 
 - Appends missing **ATU Multi-Currency** keys to `.env` and `.env.example` (unless `--skip-env`)
-- Explains that **routes, config, migrations, and Volt views load from vendor**
+- Explains that **routes, config, migrations, and Livewire views load from vendor**
 - Prompts to run `php artisan migrate` (package migrations are loaded via `loadMigrationsFrom`)
 - Prompts to run the **base currency** seeder
 
@@ -89,7 +89,7 @@ php artisan vendor:publish --tag=atumulticurrency-config
 
 ### 5. Optional: admin UI checklist
 
-When Volt is installed, admin routes are registered at **`/admin/atu/currencies`**. To verify optional Flux layout dependencies and optionally inject sidebar links:
+Admin routes are registered at **`/admin/atu/currencies`**. To verify optional Flux layout dependencies and optionally inject sidebar links:
 
 ```sh
 php artisan atumulticurrency:ui-install
@@ -171,18 +171,18 @@ Routes are registered by the package with the `api` middleware stack, prefix **`
 
 Endpoints include listing currencies, current/default, switch, CRUD, toggle active, set default, settings read/update, and conversion logs. Secure them with your own middleware (Sanctum, admin gates, throttling) as needed.
 
-## Admin UI (Volt)
+## Admin UI (Livewire 4)
 
-If **`livewire/volt`** is installed, the service provider mounts Volt views from the package and loads **`/admin/atu/currencies`** routes (names such as `admin.atu.currencies.index`).
+The service provider registers the package view location with `Livewire::addLocation` and loads **`/admin/atu/currencies`** routes (names such as `admin.atu.currencies.index`).
 
-If Volt is not installed, use the reference stubs under `vendor/vormia-folks/atu-multi-currency/src/stubs/reference/` for manual integration.
+For manual route or layout merges, use the reference stubs under `vendor/vormia-folks/atu-multi-currency/src/stubs/reference/`.
 
 ## Documentation
 
 | Document | Description |
 | --- | --- |
 | [`CHANGELOG.md`](CHANGELOG.md) | Version history (Keep a Changelog) |
-| [`docs/build-guide.md`](docs/build-guide.md) | Install, database, API, admin UI (Volt/Flux), UI contract |
+| [`docs/build-guide.md`](docs/build-guide.md) | Install, database, API, admin UI (Livewire / Flux), UI contract |
 | [`docs/package-creation-guide.md`](docs/package-creation-guide.md) | Template for ATU-style Laravel packages (optional) |
 | [`docs/releases/v2.1.0.md`](docs/releases/v2.1.0.md) | Release notes for v2.1.0 |
 
@@ -195,15 +195,15 @@ php artisan atumulticurrency:uninstall
 composer remove vormia-folks/atu-multi-currency
 ```
 
-The uninstall command can strip ATU env keys and optionally roll back this package’s migrations. It does not remove the Composer package; `composer remove` does that. Routes and Volt UI unregister once the package is removed.
+The uninstall command can strip ATU env keys and optionally roll back this package’s migrations. It does not remove the Composer package; `composer remove` does that. Routes and admin Livewire UI unregister once the package is removed.
 
-Use `atumulticurrency:ui-uninstall` first if you still have **legacy copied** Blade/Volt files from older installs.
+Use `atumulticurrency:ui-uninstall` first if you still have **legacy copied** Blade or Livewire files from older installs.
 
 ## Troubleshooting
 
 - **Migrations not applied** — Run `php artisan migrate`. Package migrations are registered automatically.
 - **Seeder skipped** — A default row already exists, or run the seeder class shown in `atumulticurrency:help`.
-- **No admin pages** — Install `livewire/volt` (and Livewire); run `atumulticurrency:ui-install` to verify suggested packages.
+- **No admin pages** — Confirm `livewire/livewire` is installed (it is required by this package); run `atumulticurrency:ui-install` to verify Flux-related packages, routes, and auth middleware.
 - **`a2_ec_settings` missing** — Expected without A2Commerce; seeder falls back to USD.
 
 ## Contributing

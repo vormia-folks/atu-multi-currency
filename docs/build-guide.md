@@ -1,23 +1,23 @@
 # ATU Multi-Currency build guide
 
-Installation, database behavior, JSON API, **admin UI** (Livewire Volt / Flux), and the **UI contract** for anyone extending or auditing the package.
+Installation, database behavior, JSON API, **admin UI** (Livewire 4 / Flux), and the **UI contract** for anyone extending or auditing the package.
 
 ---
 
 ## Core package
 
-How the package is meant to be used in a Laravel application: **code ships in `vendor`**, and the app gets database tables, merged config, routes, and optional Volt admin pages through Laravel’s normal package mechanisms.
+How the package is meant to be used in a Laravel application: **code ships in `vendor`**, and the app gets database tables, merged config, routes, and **Livewire 4** admin pages through Laravel’s normal package mechanisms (`livewire/livewire` is required).
 
 ### What this package is
 
 - **Projection layer** — Commerce amounts stay in the **base/system currency** in A2 (or your app). ATU converts for display, APIs, and reporting and records conversions in its own tables.
-- **Self-contained wiring** — Migrations are loaded with `loadMigrationsFrom`. API routes load from `routes/atu-multicurrency-api.php`. Config is merged from the package. When `livewire/volt` is present, Volt views are mounted from the package and web routes load from `routes/atumulticurrency-web.php`.
+- **Self-contained wiring** — Migrations are loaded with `loadMigrationsFrom`. API routes load from `routes/atu-multicurrency-api.php`. Config is merged from the package. The package requires **Livewire 4**; it calls `Livewire::addLocation` for its single-file views and loads web routes from `routes/atumulticurrency-web.php`.
 - **Installer is thin** — `atumulticurrency:install` adds `.env` keys (unless `--skip-env`) and prompts for migrate/seed. It does **not** copy migrations, controllers, or views into your project tree.
 
 ### Requirements
 
-- PHP 8.2+, Laravel 12 or 13, Vormia 5.x
-- Optional: Livewire + Volt + Flux-related packages for the admin UI (see `composer.json` `suggest` and `atumulticurrency:help`)
+- PHP 8.2+, Laravel 12 or 13, Vormia 5.x, Livewire 4.x (`livewire/livewire` is required by this package)
+- Optional: Flux-related packages for the admin shell (see `composer.json` `suggest` and `atumulticurrency:help`)
 
 ### Install
 
@@ -84,7 +84,7 @@ Environment keys (added by the installer when possible):
 ### HTTP surface
 
 - **API** — Prefix `/api/atu/currency`, middleware `api`, route names `api.atu.currency.*`
-- **Admin Volt** — When Volt is installed: `/admin/atu/currencies`, route names `admin.atu.currencies.*`
+- **Admin Livewire** — `/admin/atu/currencies`, route names `admin.atu.currencies.*`
 
 Add authentication, authorization, and rate limiting in your app as required (for example middleware on route groups or a consuming gateway).
 
@@ -104,7 +104,7 @@ composer remove vormia-folks/atu-multi-currency
 
 ## Admin UI setup
 
-From **v2.x**, Volt admin views and `/admin/atu/currencies` routes are registered **from the package** when `livewire/volt` is installed. You normally do **not** copy Blade or Volt files into `resources/views` for day-to-day use.
+From **v2.x**, Livewire admin views and `/admin/atu/currencies` routes are registered **from the package** (Livewire is a Composer dependency). You normally do **not** copy Blade or Livewire component files into `resources/views` for day-to-day use.
 
 The `ui-*` commands help verify optional layout packages, inject a **Flux** sidebar snippet if you want it, clear caches after upgrades, and clean up **legacy** files from older installs that copied views into the app.
 
@@ -119,7 +119,7 @@ What this command does:
 
 - Verifies **`vormiaphp/ui-livewireflux-admin`** (^2.0) is installed (required for the check to pass).
 - Verifies ATU migrations have been applied (`atu_multicurrency_currencies` exists).
-- If **`livewire/volt`** is missing, prints how to install it and points at reference routes.
+- If **`livewire/livewire`** is missing (broken vendor), prints how to fix Composer and points at reference routes.
 - If **`livewire/flux`** is installed and you pass **`--inject-sidebar`**, attempts to merge the menu snippet after the Platform nav group in `resources/views/components/layouts/app/sidebar.blade.php` (skips if markers already present).
 - Clears config, route, view, and application caches.
 
@@ -127,11 +127,11 @@ If your layout path differs from the Flux starter, injection may fail; merge man
 
 ### Routes (normal v2 case)
 
-With Volt installed, the package registers routes under **`/admin/atu/currencies`** (route names like `admin.atu.currencies.index`). No `routes/web.php` edits are required.
+The package registers routes under **`/admin/atu/currencies`** (route names like `admin.atu.currencies.index`). No `routes/web.php` edits are required.
 
-### Manual route setup (only without Volt)
+### Manual route setup (only without the package provider or a broken Livewire install)
 
-If you cannot use Volt, adapt the reference file to your routing stack:
+If you cannot rely on the package registering routes and the view location, adapt the reference file to your routing stack and register the same `Livewire::addLocation` path (see comments in the stub):
 
 - `src/stubs/reference/routes-to-add.php`
 

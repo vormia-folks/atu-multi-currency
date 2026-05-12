@@ -1,7 +1,7 @@
 <?php
 
 use Livewire\WithPagination;
-use Livewire\Volt\Component;
+use Livewire\Component;
 use Livewire\Attributes\Computed;
 use Vormia\Vormia\Traits\Livewire\WithNotifications;
 use Vormia\ATUMultiCurrency\Models\CurrencyConversionLog;

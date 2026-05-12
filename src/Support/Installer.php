@@ -6,7 +6,7 @@ use Illuminate\Filesystem\Filesystem;
 
 /**
  * Host-app touches for ATU Multi-Currency: optional .env keys only.
- * Migrations, routes, config merge, controllers, and Volt views load from the package (no file copy).
+ * Migrations, routes, config merge, controllers, and Livewire views load from the package (no file copy).
  */
 class Installer
 {

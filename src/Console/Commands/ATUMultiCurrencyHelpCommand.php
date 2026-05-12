@@ -18,7 +18,7 @@ class ATUMultiCurrencyHelpCommand extends Command
         $this->info('ATU Multi-Currency ' . ATUMultiCurrency::VERSION);
         $this->newLine();
 
-        $this->line('Migrations, API routes, merged config, and (when Volt is installed) admin UI routes load from the package.');
+        $this->line('Migrations, API routes, merged config, and admin Livewire UI routes load from the package.');
         $this->line('No stub files are copied into your app during atumulticurrency:install.');
         $this->newLine();
 
@@ -49,7 +49,7 @@ class ATUMultiCurrencyHelpCommand extends Command
 
         $this->comment('HTTP');
         $this->line('  API (package): prefix /api/atu/currency — names like api.atu.currency.index');
-        $this->line('  Admin Volt (package, when livewire/volt installed): /admin/atu/currencies — names like admin.atu.currencies.index');
+        $this->line('  Admin Livewire (package): /admin/atu/currencies — names like admin.atu.currencies.index');
         $this->newLine();
 
         $this->comment('Seeder');

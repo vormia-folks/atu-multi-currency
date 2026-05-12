@@ -7,14 +7,14 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Schema;
-use Livewire\Volt\Volt;
+use Livewire\Livewire;
 use Vormia\ATUMultiCurrency\ATUMultiCurrency;
 
 class ATUMultiCurrencyUIInstallCommand extends Command
 {
     protected $signature = 'atumulticurrency:ui-install {--inject-sidebar : Inject Flux sidebar snippet into the app layout (optional)}';
 
-    protected $description = 'Verify ATU Multi-Currency UI dependencies; optionally inject Flux sidebar (views and routes load from the package when Volt is installed)';
+    protected $description = 'Verify ATU Multi-Currency UI dependencies; optionally inject Flux sidebar (admin views and routes load from the package; Livewire is a Composer dependency of this package)';
 
     public function handle(): int
     {
@@ -28,13 +28,13 @@ class ATUMultiCurrencyUIInstallCommand extends Command
             return self::FAILURE;
         }
 
-        if (! class_exists(Volt::class)) {
-            $this->warn('livewire/volt is not installed. Volt admin pages will not register.');
-            $this->line('Install Volt, or merge routes/views manually from:');
+        if (! class_exists(Livewire::class)) {
+            $this->warn('livewire/livewire is not installed (unexpected: this package requires it). Admin Livewire pages will not register.');
+            $this->line('Run composer install, or merge routes/views manually from:');
             $this->line('  ' . ATUMultiCurrency::stubsPath('reference/routes-to-add.php'));
             $this->newLine();
         } else {
-            $this->info('Volt is installed: admin UI routes are registered by the package at /admin/atu/currencies');
+            $this->info('Livewire is installed: admin UI routes are registered by the package at /admin/atu/currencies');
         }
 
         if ($this->option('inject-sidebar') && InstalledVersions::isInstalled('livewire/flux')) {

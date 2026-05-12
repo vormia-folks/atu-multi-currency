@@ -16,7 +16,7 @@ use Vormia\ATUMultiCurrency\Support\SettingsManager;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\ServiceProvider;
-use Livewire\Volt\Volt;
+use Livewire\Livewire;
 
 class ATUMultiCurrencyServiceProvider extends ServiceProvider
 {
@@ -46,10 +46,10 @@ class ATUMultiCurrencyServiceProvider extends ServiceProvider
 
         $this->loadRoutesFrom(ATUMultiCurrency::packageRoot() . '/routes/atu-multicurrency-api.php');
 
-        if (class_exists(Volt::class)) {
-            Volt::mount(ATUMultiCurrency::stubsPath('resources/views/livewire/admin/atu'));
-            $this->loadRoutesFrom(ATUMultiCurrency::packageRoot() . '/routes/atumulticurrency-web.php');
-        }
+        Livewire::addLocation(
+            viewPath: ATUMultiCurrency::stubsPath('resources/views/livewire/admin/atu')
+        );
+        $this->loadRoutesFrom(ATUMultiCurrency::packageRoot() . '/routes/atumulticurrency-web.php');
 
         if ($this->app->runningInConsole()) {
             $this->commands([
